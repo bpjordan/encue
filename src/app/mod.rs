@@ -1,12 +1,13 @@
-use std::io;
-use crate::prelude::*;
+use ratatui::Terminal;
 
-use ratatui::{Terminal, prelude::CrosstermBackend};
+use crate::{prelude::*, script::Script};
 
+mod render;
 
-pub fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> {
+pub fn run(terminal: &mut Terminal<TerminalBackend>, show: &Script) -> Result<()> {
 
-    // let stdout = io::stdout().into_raw_mode()?;
+    render::render_loop(terminal, show)?;
 
     Ok(())
 }
+

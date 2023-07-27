@@ -6,7 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-crossterm = { version = "0.26.1", features = ["serde", "event-stream"] }
+crossterm = { version = "0.26.1" }
+log = { version = "0.4.19", features = ["std"] }
 ratatui = { version = "0.22.0", features = ["serde", "macros", "time"] }
 serde = { version = "1.0.174", features = ["derive"] }
 serde_yaml = "0.9.25"

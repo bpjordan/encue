@@ -1,3 +1,5 @@
+#[allow(dead_code)]
+
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -5,11 +7,21 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(test, derive(Eq, PartialEq))]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub struct Show {
+pub struct Script {
     cuelist: Vec<Cue>,
 
     #[serde(default = "default_vol")]
     master: u8,
+}
+
+impl Script {
+    pub fn cuelist(&self) -> &[Cue] {
+        self.cuelist.as_ref()
+    }
+
+    pub fn master(&self) -> u8 {
+        self.master
+    }
 }
 
 #[cfg_attr(test, derive(Eq, PartialEq))]
@@ -25,6 +37,20 @@ pub struct Cue {
     action: CueAction,
 }
 
+impl Cue {
+    pub fn action(&self) -> &CueAction {
+        &self.action
+    }
+
+    pub fn description(&self) -> &str {
+        self.description.as_ref()
+    }
+
+    pub fn label(&self) -> &str {
+        self.label.as_ref()
+    }
+}
+
 #[cfg_attr(test, derive(Eq, PartialEq))]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -32,7 +58,6 @@ pub enum CueAction {
     Playback {
         file: PathBuf,
 
-        #[serde(default)]
         duration: Option<u32>,
         fade_in: Option<u32>,
         fade_out: Option<u32>,
@@ -78,7 +103,7 @@ cuelist:
   stop: all
 ";
 
-        let show = Show {
+        let show = Script {
             cuelist: vec![
                 Cue{
                     label: "SQ1".to_string(),
@@ -108,7 +133,7 @@ cuelist:
             master: 80
         };
 
-        let de = serde_yaml::from_str::<Show>(yaml).expect("Failed to deserialize");
+        let de = serde_yaml::from_str::<Script>(yaml).expect("Failed to deserialize");
         
         assert_eq!(de, show);
     }
@@ -128,7 +153,7 @@ cuelist:
   stop: all
 ";
 
-        let show = Show {
+        let show = Script {
             cuelist: vec![
                 Cue{
                     label: "SQ1".to_string(),
@@ -158,7 +183,7 @@ cuelist:
             master: 100
         };
 
-        let de = serde_yaml::from_str::<Show>(yaml).expect("Failed to deserialize");
+        let de = serde_yaml::from_str::<Script>(yaml).expect("Failed to deserialize");
         
         assert_eq!(de, show);
     }
