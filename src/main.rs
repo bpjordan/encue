@@ -1,41 +1,39 @@
 
 mod error;
 mod app;
+mod terminal;
 mod prelude;
 mod script;
 mod logging;
 
-use std::io;
+use app::{AppState, events::EventListener, update::update};
 
-use crossterm::{terminal, ExecutableCommand};
-use ratatui::prelude::*;
 use crate::prelude::*;
 
 fn main() -> Result<()> {
     let script = script::load()?
         .validate()?;
 
-    let mut term = setup_terminal()?;
+    let mut app = AppState::new(&script)?;
 
-    if let Err(e) = app::run(&mut term, &script) {
-        eprintln!("{e}")
-    }
+    let events = EventListener::init();
 
-    restore_terminal(&mut term)
+    let mut term = terminal::setup_terminal()?;
+
+    let rc = loop {
+        if !app.active() { break Ok(()) };
+        let event = match events.next() {
+            Ok(e) => e,
+            Err(e) => break Err(e),
+        };
+
+        if let Err(e) = update(event, &mut term, &mut app) {
+            break Err(e);
+        };
+    };
+
+    terminal::restore_terminal(term)?;
+
+    rc
 }
 
-fn setup_terminal() -> Result<Terminal<TerminalBackend>> {
-    let mut stdout = io::stdout();
-    terminal::enable_raw_mode()?;
-    stdout.execute(terminal::EnterAlternateScreen)?;
-
-    Ok(Terminal::new(CrosstermBackend::new(stdout))?)
-}
-
-fn restore_terminal(terminal: &mut Terminal<TerminalBackend>) -> Result<()> {
-
-    terminal::disable_raw_mode()?;
-    crossterm::execute!(terminal.backend_mut(), terminal::LeaveAlternateScreen)?;
-
-    Ok(())
-}

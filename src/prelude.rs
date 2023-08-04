@@ -1,7 +1,5 @@
 
-pub use crate::error::Error;
+pub use crate::error::FatalError;
 
-pub type Result<T, E = Error> = core::result::Result<T, E>;
-
-pub type TerminalBackend = ratatui::prelude::CrosstermBackend<std::io::Stdout>;
+pub type Result<T, E = FatalError> = core::result::Result<T, E>;
 

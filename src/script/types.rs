@@ -1,8 +1,8 @@
-#[allow(dead_code)]
-
 use std::path::PathBuf;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 
 #[cfg_attr(test, derive(Eq, PartialEq))]
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -14,6 +14,7 @@ pub struct Script {
     master: u8,
 }
 
+#[allow(dead_code)]
 impl Script {
     pub fn cuelist(&self) -> &[Cue] {
         self.cuelist.as_ref()
@@ -51,6 +52,7 @@ impl Cue {
     }
 }
 
+#[serde_as]
 #[cfg_attr(test, derive(Eq, PartialEq))]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -67,7 +69,9 @@ pub enum CueAction {
 
         #[serde(default)]
         volume: u8,
-        duration: u32
+
+        #[serde_as(as = "serde_with::DurationSecondsWithFrac")]
+        duration: Duration
     },
     Stop(String),
 }
@@ -121,7 +125,7 @@ cuelist:
                     action: CueAction::Fade{
                         target: "SQ1".to_string(),
                         volume: 40,
-                        duration: 10
+                        duration: Duration::from_secs(10)
                     }
                 },
                 Cue {
@@ -171,7 +175,7 @@ cuelist:
                     action: CueAction::Fade{
                         target: "SQ1".to_string(),
                         volume: 0,
-                        duration: 10
+                        duration: Duration::from_secs(10)
                     }
                 },
                 Cue {

@@ -23,7 +23,7 @@ cues:
   description: fade out my first sound cue
   fade:
     target: SQ1
-    duration: 20s
+    duration: 20
 ```
 
 ## Planned Features Note

@@ -1,13 +1,9 @@
-use ratatui::Terminal;
 
-use crate::{prelude::*, script::Script};
+pub mod render;
+pub mod state;
+pub mod widgets;
+pub mod events;
+pub mod update;
 
-mod render;
-
-pub fn run(terminal: &mut Terminal<TerminalBackend>, show: &Script) -> Result<()> {
-
-    render::render_loop(terminal, show)?;
-
-    Ok(())
-}
+pub use state::AppState;
 

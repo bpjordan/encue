@@ -1,9 +1,11 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::mpsc};
+
+use crate::app::events::Event;
 
 #[allow(unused)]
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error {
+pub enum FatalError {
     #[error("Generic Error {0}")]
     Generic(String),
 
@@ -23,5 +25,14 @@ pub enum Error {
     Render,
 
     #[error(transparent)]
-    SetLogger(#[from] log::SetLoggerError)
+    SetLogger(#[from] log::SetLoggerError),
+
+    #[error(transparent)]
+    RecvEvent(#[from] mpsc::RecvError),
+
+    #[error("Event listener thread couldn't communicate with main thread: {0}")]
+    SendEvent(#[from] mpsc::SendError<Event>),
+
+    #[error("A thread panicked")]
+    ThreadPanic,
 }

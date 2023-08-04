@@ -11,11 +11,12 @@ impl Script {
         for cue in self.cuelist() {
             match cue.action() {
                 super::CueAction::Playback {
-                    file,
+                    #[cfg(release)] file,
                     ..
                 } => {
+                        #[cfg(not(debug_assertions))]
                         if !file.exists() {
-                            return Err(Error::CueFile(cue.label().to_string(), file.clone()))
+                            return Err(FatalError::CueFile(cue.label().to_string(), file.clone()))
                         }
                     },
                 super::CueAction::Fade {
@@ -23,12 +24,12 @@ impl Script {
                     ..
                 } => {
                         if !valid_targets.contains(&target.as_str()) {
-                            return Err(Error::CueTarget(cue.label().to_string(), target.clone()))
+                            return Err(FatalError::CueTarget(cue.label().to_string(), target.clone()))
                         }
                     },
                 super::CueAction::Stop(target) => {
                     if !valid_targets.contains(&target.as_str()) {
-                        return Err(Error::CueTarget(cue.label().to_string(), target.clone()))
+                        return Err(FatalError::CueTarget(cue.label().to_string(), target.clone()))
                     }
                 },
             }
