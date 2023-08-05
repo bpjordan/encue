@@ -22,6 +22,8 @@ pub fn handle_key(key: KeyEvent, app: &mut AppState) -> Result<()> {
         KeyCode::Char('q') => app.quit(),
         KeyCode::Down
             | KeyCode::Char('k') => app.select_next(),
+        KeyCode::Up
+            | KeyCode::Char('j') => app.select_prev(),
         _ => Ok(())
     }
 }

@@ -70,4 +70,18 @@ impl AppState<'_> {
 
         Ok(())
     }
+    
+    pub fn select_prev(&mut self) -> Result<()> {
+        let i = match self.list_state_mut().selected() {
+            Some(t) if t > 0 => {
+                t - 1
+            }
+
+            _ => self.cuelist().len() - 1,
+        };
+
+        self.list_state_mut().select(Some(i));
+
+        Ok(())
+    }
 }
