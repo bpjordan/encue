@@ -9,44 +9,47 @@ fn deserialize_full() {
 master: 80
 cuelist:
 - label: SQ1
+  description: Sound Cue 1
+  hint: pg. 1
   playback:
     file: sound.wav
     duration: 45
     fade_in: 5
     fade_out: 10
 - label: SQ2
+  description: Fade Down SQ1
+  hint: pg. 2
   fade:
     target: SQ1
     volume: 40
     duration: 10
 - label: SQ3
+  description: Hard Stop
+  hint: curtain
   stop: all
 ";
 
     let show = Script::new(vec![
         Cue::new(
             "SQ1",
-            cue::CueAction::Playback(
-                actions::PlaybackCue::new("sound.wav")
-                    .for_duration(Duration::from_secs(45))
-                    .fade_in_for(Duration::from_secs(5))
-                    .fade_out_for(Duration::from_secs(10))
-            )
-        ),
+            actions::PlaybackCue::new("sound.wav")
+                .for_duration(Duration::from_secs(45))
+                .fade_in_for(Duration::from_secs(5))
+                .fade_out_for(Duration::from_secs(10))
+        ).with_description("Sound Cue 1")
+            .with_hint("pg. 1"),
         Cue::new(
             "SQ2",
-            cue::CueAction::Fade(
-                actions::FadeCue::new("SQ1")
-                    .to_volume(40)
-                    .for_duration(Duration::from_secs(10))
-            )
-        ),
+            actions::FadeCue::new("SQ1")
+                .to_volume(40)
+                .for_duration(Duration::from_secs(10))
+        ).with_description("Fade Down SQ1")
+            .with_hint("pg. 2"),
         Cue::new(
             "SQ3",
-            cue::CueAction::Stop(
-                actions::StopCue::new("all")
-            )
-        ),
+            actions::StopCue::new("all")
+        ).with_description("Hard Stop")
+            .with_hint("curtain"),
     ]).with_master(80);
 
     let de = serde_yaml::from_str::<Script>(yaml).expect("Failed to deserialize");
