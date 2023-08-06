@@ -6,7 +6,7 @@ use ratatui::widgets::{ListState, List};
 use crate::logging::{TuiLoggerState, TuiLogger};
 
 use crate::prelude::*;
-use crate::script::Script;
+use crate::cues::Script;
 
 use super::widgets::cue_list;
 

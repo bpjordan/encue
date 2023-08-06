@@ -3,15 +3,17 @@ mod error;
 mod app;
 mod terminal;
 mod prelude;
-mod script;
+mod cues;
 mod logging;
+mod util;
 
 use app::{AppState, events::EventListener, update::update};
+use cues::Script;
 
 use crate::prelude::*;
 
 fn main() -> Result<()> {
-    let script = script::load()?
+    let script = Script::load()?
         .validate()?;
 
     let mut app = AppState::new(&script)?;

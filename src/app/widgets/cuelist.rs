@@ -1,7 +1,7 @@
 use ratatui::{
     widgets::{ListItem, List, Block, Borders, BorderType}, text::{Span, Line}};
 
-use crate::script::Cue;
+use crate::cues::Cue;
 
 pub fn cue_list(cuelist: &[Cue]) -> List {
     let items: Vec<_> = cuelist
