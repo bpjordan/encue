@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use log::LevelFilter;
-use ratatui::widgets::{ListState, List};
+use ratatui::widgets::{ListState, List, Table, TableState};
 
 use crate::logging::{TuiLoggerState, TuiLogger};
 
@@ -12,9 +12,10 @@ use super::widgets::cue_list;
 
 pub struct AppState<'a> {
     active: bool,
-    cuelist: List<'a>,
-    list_state: ListState,
+    cuelist: Table<'a>,
+    list_state: TableState,
     logger_state: Arc<Mutex<TuiLoggerState>>,
+    cuelist_len: usize,
 }
 
 impl<'a> AppState<'a> {
@@ -23,8 +24,9 @@ impl<'a> AppState<'a> {
         Ok(Self {
             active: true,
             cuelist: cue_list(script.cuelist()),
-            list_state: ListState::default().with_selected(Some(0)),
+            list_state: TableState::default().with_selected(Some(0)),
             logger_state: TuiLogger::init(LevelFilter::Trace)?,
+            cuelist_len: script.cuelist().len(),
         })
     }
 
@@ -43,7 +45,7 @@ impl<'a> AppState<'a> {
         self.active
     }
 
-    pub fn list_state_mut(&mut self) -> &mut ListState {
+    pub fn list_state_mut(&mut self) -> &mut TableState {
         &mut self.list_state
     }
 
@@ -51,7 +53,7 @@ impl<'a> AppState<'a> {
         &self.logger_state
     }
 
-    pub fn cuelist(&self) -> &List<'a> {
+    pub fn cuelist(&self) -> &Table<'a> {
         &self.cuelist
     }
 }
@@ -59,7 +61,7 @@ impl<'a> AppState<'a> {
 impl AppState<'_> {
     pub fn select_next(&mut self) -> Result<()> {
         let i = match self.list_state_mut().selected() {
-            Some(t) if t < self.cuelist().len() - 1 => {
+            Some(t) if t < self.cuelist_len - 1 => {
                 t + 1
             }
 
@@ -77,7 +79,7 @@ impl AppState<'_> {
                 t - 1
             }
 
-            _ => self.cuelist().len() - 1,
+            _ => self.cuelist_len - 1,
         };
 
         self.list_state_mut().select(Some(i));

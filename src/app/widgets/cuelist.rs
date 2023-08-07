@@ -1,23 +1,29 @@
-use ratatui::{
-    widgets::{ListItem, List, Block, Borders, BorderType}, text::{Span, Line}};
+use ratatui::{widgets::{Block, Borders, BorderType, Table, Row, Cell}, prelude::Constraint, style::{Style, Color, Stylize}};
 
 use crate::cues::Cue;
 
-pub fn cue_list(cuelist: &[Cue]) -> List {
+pub fn cue_list(cuelist: &[Cue]) -> Table {
     let items: Vec<_> = cuelist
         .iter().map(|c| {
-            ListItem::new(Line::from(vec![
-                Span::raw(format!(" {:<10}", c.label())),
-                Span::raw(c.description())
-            ]))
+            Row::new(vec![
+                Cell::from(c.label()),
+                Cell::from(c.description())
+            ])
         }).collect();
 
-    List::new(items)
+    Table::new(items)
+        .widths(&[Constraint::Length(10), Constraint::Percentage(100)])
+        .header(
+            Row::new(vec![
+                Cell::from("Label"),
+                Cell::from("Description") ])
+                .style(Style::new().bold().underlined())
+        )
+        .highlight_symbol(">> ")
+        .highlight_style(Style::new().bg(Color::DarkGray))
         .block(Block::default()
             .borders(Borders::ALL)
             .border_type(BorderType::Rounded)
             .title("Cues")
         )
-        .highlight_symbol(">>")
-        .to_owned()
 }
