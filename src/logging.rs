@@ -1,7 +1,7 @@
 
-use std::sync::{Arc, Mutex};
+use std::{sync::{Arc, Mutex}, time::Instant};
 
-use log::{Log, LevelFilter};
+use log::{Log, LevelFilter, Level};
 use ratatui::{widgets::{StatefulWidget, Widget, Block}, style::Style};
 
 use crate::prelude::*;
@@ -14,14 +14,14 @@ pub struct TuiLogger{
 }
 
 #[derive(Default, Clone)]
-pub struct TuiLoggerState(Vec<String>);
+pub struct TuiLoggerState(Vec<(Level, Instant, String)>);
 
 impl TuiLoggerState {
-    fn write_line(&mut self, message: impl ToString) {
-        self.0.push(message.to_string())
+    fn push(&mut self, args: (Level, Instant, String)) {
+        self.0.push(args)
     }
 
-    fn flush(&mut self) {
+    fn clear(&mut self) {
         self.0.clear()
     }
 }
@@ -76,16 +76,29 @@ impl StatefulWidget for LogWidget<'_> {
             None => area
         };
 
-        let max_lines = text_area.height - 1;
-
         let history_to_show = state.0
             .iter()
             .rev()
-            .take(max_lines as usize)
+            .take(text_area.height as usize)
             .rev();
 
-        for (y, line) in history_to_show.enumerate() {
-            buf.set_string(text_area.left(), text_area.top() + y as u16, line, Style::default())
+        for (y, (level, _time, msg)) in history_to_show.enumerate() {
+
+            let level_color = match level {
+                Level::Error => Color::Red,
+                Level::Warn => Color::Yellow,
+                Level::Info => Color::Green,
+                Level::Debug => Color::Blue,
+                Level::Trace => Color::Cyan,
+            };
+
+            buf.set_line(text_area.left(), text_area.top() + y as u16,
+                &Line::from(vec![
+                    Span::from(format!("{level:<5}: ")).bold().fg(level_color),
+                    Span::from(msg.to_string())
+                ]),
+                text_area.width
+            );
         }
     }
 }
@@ -118,18 +131,17 @@ impl Log for TuiLogger {
                 return;
             };
 
-            history.write_line(format!(
-                "{:<5}: [{}] {}",
+            history.push((
                 record.level(),
-                target,
-                record.args()
+                Instant::now(),
+                format!("[{}] {}", target, record.args()),
             ));
         }
     }
 
     fn flush(&self) {
         if let Ok(mut history) = self.state.lock() {
-            history.flush()
+            history.clear()
         }
     }
 }
