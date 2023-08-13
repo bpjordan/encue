@@ -65,6 +65,9 @@ impl Cue {
 pub enum CueAction {
 
     #[serde(deserialize_with = "crate::util::serde::string_or_struct::deserialize")]
+    Playlist(PlaylistCue),
+
+    #[serde(deserialize_with = "crate::util::serde::string_or_struct::deserialize")]
     Playback(PlaybackCue),
 
     #[serde(deserialize_with = "crate::util::serde::string_or_struct::deserialize")]

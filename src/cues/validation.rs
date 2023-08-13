@@ -26,6 +26,7 @@ impl Script {
                         return Err(FatalError::CueTarget(cue.label().to_string(), c.target().to_string()))
                     }
                 },
+                _ => {}
             }
         }
 
