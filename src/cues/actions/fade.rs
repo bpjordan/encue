@@ -1,13 +1,13 @@
 use std::{
     time::Duration,
     str::FromStr,
-    convert::Infallible
+    convert::Infallible, ops::Mul, thread
 };
 
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
-use crate::util::defaults;
+use crate::{util::defaults, sound::{ExecuteCue, ExecuteCueError}};
 
 
 #[serde_as]
@@ -63,5 +63,40 @@ impl FromStr for FadeCue {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::new(s))
+    }
+}
+
+impl ExecuteCue for FadeCue {
+    fn execute(self, engine: &mut crate::sound::AudioEngine) -> Result<(), ExecuteCueError> {
+        let Some(sink) = engine.get_sink(self.target()) else {
+            return Err(ExecuteCueError::MissingTarget(self.target))
+        };
+
+        let initial_vol = sink.volume()
+            .mul(100_f32)
+            .round() as i32;
+
+        let steps = initial_vol
+            .checked_sub(self.volume() as i32)
+            .ok_or(ExecuteCueError::General("overflow"))?;
+
+        let fade_rate = self.duration()
+            .checked_div(steps.unsigned_abs())
+            .unwrap_or(self.duration().clone());
+
+        thread::spawn(move || {
+            for current_vol in initial_vol..=self.volume() as i32 {
+                thread::sleep(fade_rate);
+
+                let current_vol = (current_vol as f32) / 100.0;
+                sink.set_volume(current_vol)
+            }
+
+            if self.volume() == 0 {
+                sink.stop();
+            }
+        });
+
+        Ok(())
     }
 }

@@ -3,6 +3,9 @@ use std::{str::FromStr, convert::Infallible};
 
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+use thiserror::Error;
+
+use crate::sound::{ExecuteCue, ExecuteCueError};
 
 #[serde_as]
 #[cfg_attr(test, derive(Eq, PartialEq))]
@@ -28,5 +31,16 @@ impl FromStr for StopCue {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::new(s))
+    }
+}
+
+impl ExecuteCue for StopCue {
+    fn execute(self, engine: &mut crate::sound::AudioEngine) -> Result<(), ExecuteCueError> {
+        if let Some(s) = engine.take_sink(self.target()) {
+            s.stop();
+            Ok(())
+        } else {
+            Err(ExecuteCueError::MissingTarget(self.target))
+        }
     }
 }

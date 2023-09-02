@@ -35,4 +35,7 @@ pub enum FatalError {
 
     #[error("A thread panicked")]
     ThreadPanic,
+
+    #[error(transparent)]
+    OutputSetup(#[from] rodio::StreamError),
 }

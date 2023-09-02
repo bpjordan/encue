@@ -6,6 +6,7 @@ mod prelude;
 mod cues;
 mod logging;
 mod util;
+mod sound;
 
 use app::{AppState, events::EventListener, update::update};
 use cues::Script;

@@ -75,6 +75,8 @@ pub enum CueAction {
 
     #[serde(deserialize_with = "crate::util::serde::string_or_struct::deserialize")]
     Stop(StopCue),
+
+    Group(CueGroup),
 }
 
 impl From<StopCue> for CueAction {
