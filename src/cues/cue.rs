@@ -1,5 +1,9 @@
+use std::error::Error;
+
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+
+use crate::sound::{ExecuteCue, PrepareCue};
 
 use super::actions::*;
 
@@ -76,7 +80,13 @@ pub enum CueAction {
     #[serde(deserialize_with = "crate::util::serde::string_or_struct::deserialize")]
     Stop(StopCue),
 
-    Group(CueGroup),
+    // Group(CueGroup),
+}
+
+impl From<PlaylistCue> for CueAction {
+    fn from(v: PlaylistCue) -> Self {
+        Self::Playlist(v)
+    }
 }
 
 impl From<StopCue> for CueAction {
@@ -97,3 +107,13 @@ impl From<PlaybackCue> for CueAction {
     }
 }
 
+impl CueAction {
+    pub fn prepare(&self, label: Option<&str>) -> Result<Box<dyn ExecuteCue>, Box<dyn Error + Send + Sync>> {
+        match self {
+            CueAction::Playlist(p) => Ok(Box::new(p.prepare(label)?)),
+            CueAction::Playback(p) => Ok(Box::new(p.prepare(label)?)),
+            CueAction::Fade(f) => Ok(Box::new(f.prepare(label)?)),
+            CueAction::Stop(s) => Ok(Box::new(s.prepare(label)?)),
+        }
+    }
+}

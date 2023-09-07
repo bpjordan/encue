@@ -14,23 +14,36 @@ use super::widgets::cue_list;
 
 pub struct AppState<'a> {
     active: bool,
-    cuelist: Table<'a>,
-    executables: HashMap<String, Box<dyn ExecuteCue>>,
+    widget: Table<'a>,
+    cuelist: Vec<&'a str>,
+    executables: HashMap<&'a str, Box<dyn ExecuteCue>>,
     list_state: TableState,
     logger_state: Arc<Mutex<TuiLoggerState>>,
-    cuelist_len: usize,
 }
 
 impl<'a> AppState<'a> {
     pub fn new(script: &'a Script) -> Result<Self> {
 
+        let executables = script.cuelist().into_iter().filter_map(|cue| {
+            let label = cue.label();
+            match cue.action().prepare(Some(label)) {
+                Ok(exe) => {
+                    Some((label, exe))
+                },
+                Err(e) => {
+                    log::error!("Error preparing cue `{label}`: {e}");
+                    None
+                },
+            }
+        }).collect();
+
         Ok(Self {
             active: true,
-            cuelist: cue_list(script.cuelist()),
+            widget: cue_list(script.cuelist()),
+            cuelist: script.cue_names(),
+            executables,
             list_state: TableState::default().with_selected(Some(0)),
             logger_state: TuiLogger::init(LevelFilter::Trace)?,
-            cuelist_len: script.cuelist().len(),
-            executables: HashMap::new(),
         })
     }
 
@@ -57,15 +70,16 @@ impl<'a> AppState<'a> {
         &self.logger_state
     }
 
-    pub fn cuelist(&self) -> &Table<'a> {
-        &self.cuelist
+    pub fn widget(&self) -> &Table<'a> {
+        &self.widget
     }
+
 }
 
 impl AppState<'_> {
     pub fn select_next(&mut self) -> Result<()> {
         let i = match self.list_state_mut().selected() {
-            Some(t) if t < self.cuelist_len - 1 => {
+            Some(t) if t < self.cuelist.len() - 1 => {
                 t + 1
             }
 
@@ -83,7 +97,7 @@ impl AppState<'_> {
                 t - 1
             }
 
-            _ => self.cuelist_len - 1,
+            _ => self.cuelist.len() - 1,
         };
 
         self.list_state_mut().select(Some(i));
