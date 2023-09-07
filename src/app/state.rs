@@ -25,6 +25,8 @@ pub struct AppState<'a> {
 impl<'a> AppState<'a> {
     pub fn new(script: &'a Script) -> Result<Self> {
 
+        let logger_state = TuiLogger::init(LevelFilter::Info)?;
+
         let executables = script.cuelist().into_iter().filter_map(|cue| {
             let label = cue.label();
             match cue.action().prepare(Some(label)) {
@@ -44,7 +46,7 @@ impl<'a> AppState<'a> {
             cuelist: script.cue_names(),
             executables,
             list_state: TableState::default().with_selected(Some(0)),
-            logger_state: TuiLogger::init(LevelFilter::Trace)?,
+            logger_state,
             engine: AudioEngine::try_init_default()?,
         })
     }
