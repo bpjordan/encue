@@ -3,7 +3,9 @@ use std::{error::Error, convert::Infallible, io};
 use rodio::PlayError;
 use thiserror::Error;
 
-use super::AudioEngine;
+use crate::cues::actions::*;
+
+use super::{AudioEngine, PlaybackExecutable};
 
 #[derive(Debug, Error)]
 pub enum ExecuteCueError {
@@ -42,5 +44,21 @@ impl<T: ExecuteCue + Clone> PrepareCue for T {
 
     fn prepare(&self, _: Option<&str>) -> Result<Self::Executable, Self::PrepareError> {
         Ok(self.clone())
+    }
+}
+
+pub enum ExecutableCue {
+    Playback(PlaybackExecutable),
+    Fade(FadeCue),
+    Stop(StopCue),
+}
+
+impl ExecutableCue {
+    pub fn execute(self, engine: &mut AudioEngine) -> Result<(), ExecuteCueError> {
+        match self {
+            ExecutableCue::Playback(c) => c.execute(engine),
+            ExecutableCue::Fade(c) => c.execute(engine),
+            ExecutableCue::Stop(c) => c.execute(engine),
+        }
     }
 }

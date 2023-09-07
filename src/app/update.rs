@@ -25,6 +25,11 @@ pub fn handle_key(key: KeyEvent, app: &mut AppState) -> Result<()> {
             | KeyCode::Char('j') => app.select_next(),
         KeyCode::Up
             | KeyCode::Char('k') => app.select_prev(),
+        KeyCode::Char(' ') => {
+            app.execute_selected()
+                .unwrap_or_else(|e| log::error!("Error executing cue: {e}"));
+            app.select_next()
+        },
         _ => Ok(())
     }
 }

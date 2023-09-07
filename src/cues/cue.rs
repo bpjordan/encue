@@ -3,7 +3,7 @@ use std::error::Error;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
-use crate::sound::{ExecuteCue, PrepareCue};
+use crate::sound::{ExecuteCue, PrepareCue, ExecutableCue};
 
 use super::actions::*;
 
@@ -108,12 +108,12 @@ impl From<PlaybackCue> for CueAction {
 }
 
 impl CueAction {
-    pub fn prepare(&self, label: Option<&str>) -> Result<Box<dyn ExecuteCue>, Box<dyn Error + Send + Sync>> {
+    pub fn prepare(&self, label: Option<&str>) -> Result<ExecutableCue, Box<dyn Error + Send + Sync>> {
         match self {
-            CueAction::Playlist(p) => Ok(Box::new(p.prepare(label)?)),
-            CueAction::Playback(p) => Ok(Box::new(p.prepare(label)?)),
-            CueAction::Fade(f) => Ok(Box::new(f.prepare(label)?)),
-            CueAction::Stop(s) => Ok(Box::new(s.prepare(label)?)),
+            CueAction::Playlist(p) => Ok(ExecutableCue::Playback(p.prepare(label)?)),
+            CueAction::Playback(p) => Ok(ExecutableCue::Playback(p.prepare(label)?)),
+            CueAction::Fade(f) => Ok(ExecutableCue::Fade(f.clone())),
+            CueAction::Stop(s) => Ok(ExecutableCue::Stop(s.clone())),
         }
     }
 }

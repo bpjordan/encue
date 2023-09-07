@@ -5,9 +5,10 @@ use crate::app::events::Event;
 #[allow(unused)]
 
 #[derive(thiserror::Error, Debug)]
+#[non_exhaustive]
 pub enum FatalError {
-    #[error("Generic Error {0}")]
-    Generic(String),
+    #[error("{0}")]
+    Generic(&'static str),
 
     #[error(transparent)]
     IO(#[from] std::io::Error),

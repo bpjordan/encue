@@ -31,7 +31,7 @@ pub fn render<B: Backend>(term: &mut Terminal<B>, app: &mut AppState) -> Result<
             return;
         };
 
-        f.render_stateful_widget(app.cuelist().clone(), main, app.list_state_mut());
+        f.render_stateful_widget(app.widget().clone(), main, app.list_state_mut());
         f.render_widget(rta(), top_left);
         f.render_widget(clock(), top_mid);
         f.render_widget(active_list(), top_right);

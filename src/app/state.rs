@@ -8,7 +8,7 @@ use crate::logging::{TuiLoggerState, TuiLogger};
 
 use crate::prelude::*;
 use crate::cues::Script;
-use crate::sound::ExecuteCue;
+use crate::sound::{ExecuteCue, AudioEngine, ExecuteCueError, ExecutableCue};
 
 use super::widgets::cue_list;
 
@@ -16,9 +16,10 @@ pub struct AppState<'a> {
     active: bool,
     widget: Table<'a>,
     cuelist: Vec<&'a str>,
-    executables: HashMap<&'a str, Box<dyn ExecuteCue>>,
+    executables: HashMap<&'a str, ExecutableCue>,
     list_state: TableState,
     logger_state: Arc<Mutex<TuiLoggerState>>,
+    engine: AudioEngine,
 }
 
 impl<'a> AppState<'a> {
@@ -44,6 +45,7 @@ impl<'a> AppState<'a> {
             executables,
             list_state: TableState::default().with_selected(Some(0)),
             logger_state: TuiLogger::init(LevelFilter::Trace)?,
+            engine: AudioEngine::try_init_default()?,
         })
     }
 
@@ -64,6 +66,10 @@ impl<'a> AppState<'a> {
 
     pub fn list_state_mut(&mut self) -> &mut TableState {
         &mut self.list_state
+    }
+
+    pub fn list_state(&self) -> &TableState {
+        &self.list_state
     }
 
     pub fn logger_state(&self) -> &Arc<Mutex<TuiLoggerState>> {
@@ -103,5 +109,17 @@ impl AppState<'_> {
         self.list_state_mut().select(Some(i));
 
         Ok(())
+    }
+
+    pub fn execute_selected(&mut self) -> Result<(), ExecuteCueError> {
+        let Some(&cue_id) = self.list_state().selected()
+            .and_then(|idx| self.cuelist.get(idx))
+        else {
+            return Err(ExecuteCueError::General("cue index out of bounds"))
+        };
+
+        let exe = self.executables.remove(cue_id).ok_or(ExecuteCueError::General("Cue not loaded"))?;
+
+        exe.execute(&mut self.engine)
     }
 }
