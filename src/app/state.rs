@@ -124,4 +124,8 @@ impl AppState<'_> {
 
         exe.execute(&mut self.engine)
     }
+
+    pub fn stop_all(&mut self) {
+        self.engine.stop_all()
+    }
 }

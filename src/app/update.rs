@@ -30,6 +30,9 @@ pub fn handle_key(key: KeyEvent, app: &mut AppState) -> Result<()> {
                 .unwrap_or_else(|e| log::error!("Error executing cue: {e}"));
             app.select_next()
         },
+        KeyCode::Char('s') => {
+            Ok(app.stop_all())
+        }
         _ => Ok(())
     }
 }
