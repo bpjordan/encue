@@ -25,7 +25,11 @@ pub struct AppState<'a> {
 impl<'a> AppState<'a> {
     pub fn new(script: &'a Script) -> Result<Self> {
 
-        let logger_state = TuiLogger::init(LevelFilter::Trace)?;
+        let logger_state = TuiLogger::init(LevelFilter::Info)?;
+        log::info!("Logging initialized");
+
+        let engine = AudioEngine::try_init_default()?;
+        log::info!("Audio engine initialized");
 
         let executables = script.cuelist().into_iter().filter_map(|cue| {
             let label = cue.label();
@@ -40,6 +44,7 @@ impl<'a> AppState<'a> {
                 },
             }
         }).collect();
+        log::info!("Finished loading cues");
 
         Ok(Self {
             active: true,
@@ -48,7 +53,7 @@ impl<'a> AppState<'a> {
             executables,
             list_state: TableState::default().with_selected(Some(0)),
             logger_state,
-            engine: AudioEngine::try_init_default()?,
+            engine,
         })
     }
 

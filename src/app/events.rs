@@ -49,7 +49,7 @@ impl EventListener {
                             tx.send(Event::Resize(r, c))?;
                         },
                         Err(e) => {
-                            log::trace!("event handler thread encountered error reading event: {e:?}");
+                            log::warn!("event handler thread encountered error reading event: {e:?}");
                             tx.send(Event::Error(e))?;
                             break
                         },

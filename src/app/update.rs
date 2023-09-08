@@ -18,7 +18,6 @@ pub fn update<B: Backend>(event: Event, term: &mut Terminal<B>, app: &mut AppSta
 
 pub fn handle_key(key: KeyEvent, app: &mut AppState) -> Result<()> {
 
-    log::trace!("Main thread got key {key:?}");
     match key.code {
         KeyCode::Char('q') => app.quit(),
         KeyCode::Down

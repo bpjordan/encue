@@ -121,23 +121,19 @@ impl Log for TuiLogger {
     }
 
     fn log(&self, record: &log::Record) {
-        if self.enabled(record.metadata()) {
-            let target = if !record.target().is_empty() {
-                record.target()
-            } else {
-                record.module_path().unwrap_or_default()
-            };
-
-            let Ok(mut history) = self.state.lock() else {
-                return;
-            };
-
-            history.push((
-                record.level(),
-                Instant::now(),
-                record.args().to_string(),
-            ));
+        if !self.enabled(record.metadata()) {
+            return;
         }
+
+        let Ok(mut history) = self.state.lock() else {
+            return;
+        };
+
+        history.push((
+            record.level(),
+            Instant::now(),
+            record.args().to_string(),
+        ));
     }
 
     fn flush(&self) {
