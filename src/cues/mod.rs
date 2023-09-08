@@ -1,7 +1,6 @@
 
 mod script;
 mod cue;
-mod child;
 mod validation;
 
 pub mod actions;
