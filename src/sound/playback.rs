@@ -1,4 +1,4 @@
-use rodio::{Sink, queue::SourcesQueueOutput, PlayError};
+use rodio::{Sink, queue::SourcesQueueOutput};
 
 use super::{ExecuteCue, ExecuteCueError};
 

@@ -1,4 +1,4 @@
-use std::{error::Error, convert::Infallible, io};
+use std::{error::Error, convert::Infallible};
 
 use rodio::PlayError;
 use thiserror::Error;
@@ -12,9 +12,6 @@ pub enum ExecuteCueError {
 
     #[error("Couldn't find target cue {0}")]
     MissingTarget(String),
-
-    #[error(transparent)]
-    IO(io::Error),
 
     #[error(transparent)]
     Playback(#[from] PlayError),

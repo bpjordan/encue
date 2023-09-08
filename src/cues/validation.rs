@@ -11,7 +11,6 @@ impl Script {
         for cue in self.cuelist() {
             match cue.action() {
                 CueAction::Playback(c) => {
-                        #[cfg(not(debug_assertions))]
                         if !c.file().exists() {
                             return Err(FatalError::CueFile(cue.label().to_string(), c.file().clone()))
                         }

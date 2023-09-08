@@ -2,7 +2,7 @@
 use std::{sync::{Arc, Mutex}, time::Instant};
 
 use log::{Log, LevelFilter, Level};
-use ratatui::{widgets::{StatefulWidget, Widget, Block}, style::Style};
+use ratatui::widgets::{StatefulWidget, Widget, Block};
 
 use crate::prelude::*;
 use ratatui::prelude::*;
@@ -116,6 +116,7 @@ impl Widget for LogWidget<'_> {
 
 impl Log for TuiLogger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.target().starts_with("encue") &&
         metadata.level() <= self.level
     }
 
@@ -134,7 +135,7 @@ impl Log for TuiLogger {
             history.push((
                 record.level(),
                 Instant::now(),
-                format!("[{}] {}", target, record.args()),
+                record.args().to_string(),
             ));
         }
     }

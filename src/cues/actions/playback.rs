@@ -46,6 +46,7 @@ impl PlaybackCue {
     }
 }
 
+#[allow(dead_code)]
 impl PlaybackCue {
     pub fn new(file: impl AsRef<Path>) -> Self {
         Self {

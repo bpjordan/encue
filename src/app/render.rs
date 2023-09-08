@@ -7,12 +7,13 @@ use super::AppState;
 pub fn render<B: Backend>(term: &mut Terminal<B>, app: &mut AppState) -> Result<()> {
 
     term.draw(|f| {
-        let [top, main, bottom] = *Layout::default()
+        let [top, main, bottom, keys] = *Layout::default()
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Percentage(25),
-                Constraint::Percentage(60),
-                Constraint::Percentage(15),
+                Constraint::Min(10),
+                Constraint::Percentage(25),
+                Constraint::Length(3),
             ].as_ref())
             .split(f.size())
         else {
@@ -35,6 +36,7 @@ pub fn render<B: Backend>(term: &mut Terminal<B>, app: &mut AppState) -> Result<
         f.render_widget(rta(), top_left);
         f.render_widget(clock(), top_mid);
         f.render_widget(active_list(), top_right);
+        f.render_widget(hotkey_guide(), keys);
         if let Ok(mut state) = app.logger_state().lock() {
             f.render_stateful_widget(logger(), bottom, &mut state)
         }
@@ -87,3 +89,12 @@ fn clock() -> impl Widget {
         )
 }
 
+fn hotkey_guide() -> impl Widget {
+
+    Paragraph::new("[q] Quit | [s]: Stop All | [j]: Select Next | [k]: Select Prev | [<Space>]: Run Selected")
+        .alignment(Alignment::Center)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+        )
+}

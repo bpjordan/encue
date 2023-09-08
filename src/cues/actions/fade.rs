@@ -38,6 +38,7 @@ impl FadeCue {
     }
 }
 
+#[allow(dead_code)]
 impl FadeCue {
     pub fn new(target: impl ToString) -> Self {
         Self {

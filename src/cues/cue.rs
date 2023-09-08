@@ -3,7 +3,7 @@ use std::error::Error;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
-use crate::sound::{ExecuteCue, PrepareCue, ExecutableCue};
+use crate::sound::{PrepareCue, ExecutableCue};
 
 use super::actions::*;
 
@@ -41,6 +41,7 @@ impl Cue {
     }
 }
 
+#[allow(dead_code)]
 impl Cue {
     pub fn new(label: impl ToString, action: impl Into<CueAction>) -> Self {
         Self {

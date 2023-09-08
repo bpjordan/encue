@@ -36,6 +36,7 @@ impl Script {
     }
 }
 
+#[allow(dead_code)]
 impl Script {
 
     pub fn load() -> Result<Self> {

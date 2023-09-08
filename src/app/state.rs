@@ -8,7 +8,7 @@ use crate::logging::{TuiLoggerState, TuiLogger};
 
 use crate::prelude::*;
 use crate::cues::Script;
-use crate::sound::{ExecuteCue, AudioEngine, ExecuteCueError, ExecutableCue};
+use crate::sound::{AudioEngine, ExecuteCueError, ExecutableCue};
 
 use super::widgets::cue_list;
 
@@ -25,12 +25,13 @@ pub struct AppState<'a> {
 impl<'a> AppState<'a> {
     pub fn new(script: &'a Script) -> Result<Self> {
 
-        let logger_state = TuiLogger::init(LevelFilter::Info)?;
+        let logger_state = TuiLogger::init(LevelFilter::Trace)?;
 
         let executables = script.cuelist().into_iter().filter_map(|cue| {
             let label = cue.label();
             match cue.action().prepare(Some(label)) {
                 Ok(exe) => {
+                    log::debug!("Loaded cue `{label}`");
                     Some((label, exe))
                 },
                 Err(e) => {
@@ -120,12 +121,15 @@ impl AppState<'_> {
             return Err(ExecuteCueError::General("cue index out of bounds"))
         };
 
+        log::info!("Executing cue {cue_id}");
+
         let exe = self.executables.remove(cue_id).ok_or(ExecuteCueError::General("Cue not loaded"))?;
 
         exe.execute(&mut self.engine)
     }
 
     pub fn stop_all(&mut self) {
+        log::info!("Stopping all active cues");
         self.engine.stop_all()
     }
 }

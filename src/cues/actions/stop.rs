@@ -3,7 +3,6 @@ use std::{str::FromStr, convert::Infallible};
 
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use thiserror::Error;
 
 use crate::sound::{ExecuteCue, ExecuteCueError};
 
