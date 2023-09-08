@@ -7,17 +7,19 @@ pub fn cue_list(cuelist: &[Cue]) -> Table {
         .iter().map(|c| {
             Row::new(vec![
                 Cell::from(c.label()),
-                Cell::from(c.description())
+                Cell::from(c.description()),
+                Cell::from(c.hint()),
             ])
         }).collect();
 
     Table::new(items)
-        .widths(&[Constraint::Length(10), Constraint::Percentage(100)])
+        .widths(&[Constraint::Length(10), Constraint::Length(25), Constraint::Percentage(100)])
         .header(
             Row::new(vec![
                 Cell::from("Label"),
-                Cell::from("Description") ])
-                .style(Style::new().bold().underlined())
+                Cell::from("Description"),
+                Cell::from("Cue"),
+            ]).style(Style::new().bold().underlined()),
         )
         .highlight_symbol(">> ")
         .highlight_style(Style::new().bg(Color::DarkGray))
