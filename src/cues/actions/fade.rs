@@ -77,17 +77,28 @@ impl ExecuteCue for FadeCue {
             .mul(100_f32)
             .round() as i32;
 
+        let target_vol = self.volume() as i32;
+
         let steps = initial_vol
-            .checked_sub(self.volume() as i32)
+            .checked_sub(target_vol)
             .ok_or(ExecuteCueError::General("overflow"))?;
 
         let fade_rate = self.duration()
             .checked_div(steps.unsigned_abs())
             .unwrap_or(self.duration().clone());
 
+        log::debug!("Starting fade cue from {initial_vol} to {}; fading over {steps} steps with {}ms between", self.volume(), fade_rate.as_millis());
+
+        let vols = if target_vol > initial_vol {
+            itertools::Either::Left(initial_vol..=target_vol)
+        } else {
+            itertools::Either::Right((target_vol..=initial_vol).rev())
+        };
+
         thread::spawn(move || {
-            for current_vol in initial_vol..=self.volume() as i32 {
+            for current_vol in vols {
                 thread::sleep(fade_rate);
+                log::trace!("fading {} to {current_vol}", self.target());
 
                 let current_vol = (current_vol as f32) / 100.0;
                 sink.set_volume(current_vol)

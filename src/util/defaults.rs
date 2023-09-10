@@ -4,6 +4,6 @@ pub fn default_vol() -> u8 {
 }
 
 pub fn default_fade_duration() -> std::time::Duration {
-    std::time::Duration::from_secs(10)
+    std::time::Duration::from_secs(5)
 }
 

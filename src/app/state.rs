@@ -68,7 +68,7 @@ pub struct AppState<'s> {
 impl<'a> AppState<'a> {
     pub fn new(script: &'a Script) -> Result<Self> {
 
-        let logger_state = TuiLogger::init(LevelFilter::Info)?;
+        let logger_state = TuiLogger::init(LevelFilter::Debug)?;
         log::info!("Logging initialized");
 
         let engine = AudioEngine::try_init_default()?;
