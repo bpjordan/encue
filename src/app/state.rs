@@ -166,6 +166,7 @@ impl AppState<'_> {
         loader.load(cue);
 
         if let Some(exe) = loader.take() {
+            log::info!("Executing cue {}", cue.label());
             exe.execute(&mut self.engine)
         } else {
             Err(ExecuteCueError::General("Cue failed to load"))

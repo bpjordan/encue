@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use thiserror::Error;
 
-use crate::sound::{PrepareCue, PlaybackExecutable};
+use crate::{sound::{PrepareCue, PlaybackExecutable}, util::defaults};
 
 #[serde_as]
 #[cfg_attr(test, derive(Eq, PartialEq))]
@@ -21,6 +21,8 @@ pub struct PlaylistCue {
     #[serde(default)]
     #[serde(alias = "loop")]
     shuffle: bool,
+
+    volume: Option<u8>,
 
     #[serde_as(as = "Option<serde_with::DurationSecondsWithFrac>")]
     crossfade: Option<Duration>,
@@ -129,6 +131,10 @@ impl PrepareCue for PlaylistCue {
         let (sink, queue) = Sink::new_idle();
 
         sink.append(s);
+
+        if let Some(vol) = self.volume {
+            sink.set_volume(vol as f32 / 100.0)
+        }
 
         Ok(PlaybackExecutable::new(label.map(ToString::to_string), sink, queue))
     }

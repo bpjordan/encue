@@ -87,7 +87,7 @@ impl ExecuteCue for FadeCue {
             .checked_div(steps.unsigned_abs())
             .unwrap_or(self.duration().clone());
 
-        log::debug!("Starting fade cue from {initial_vol} to {}; fading over {steps} steps with {}ms between", self.volume(), fade_rate.as_millis());
+        log::trace!("fade from {initial_vol} to {}; {steps} steps with {}ms between", self.volume(), fade_rate.as_millis());
 
         let vols = if target_vol > initial_vol {
             itertools::Either::Left(initial_vol..=target_vol)

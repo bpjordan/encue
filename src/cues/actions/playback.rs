@@ -17,6 +17,8 @@ use crate::sound::{PrepareCue, PlaybackExecutable};
 pub struct PlaybackCue {
     file: PathBuf,
 
+    volume: Option<u8>,
+
     #[serde_as(as = "Option<serde_with::DurationSecondsWithFrac>")]
     duration: Option<Duration>,
 
@@ -52,6 +54,7 @@ impl PlaybackCue {
         Self {
             file: file.as_ref().to_path_buf(),
             duration: None,
+            volume: None,
             fade_in: None,
             fade_out: None,
         }
@@ -111,6 +114,10 @@ impl PrepareCue for PlaybackCue {
         let (sink, queue) = Sink::new_idle();
 
         sink.append(s);
+
+        if let Some(vol) = self.volume {
+            sink.set_volume(vol as f32 / 100.0)
+        }
 
         Ok(PlaybackExecutable::new(label.map(ToString::to_string), sink, queue))
     }
