@@ -1,5 +1,6 @@
 use std::{path::{PathBuf, Path}, str::FromStr, convert::Infallible, time::Duration, io::{self, BufReader}};
 
+use rand::{seq::SliceRandom, thread_rng};
 use rodio::{Sink, Source, Decoder, source};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -94,7 +95,7 @@ impl PrepareCue for PlaylistCue {
             }));
         }
 
-        let sources = files.into_iter().filter_map(|filename| {
+        let mut sources = files.into_iter().filter_map(|filename| {
             let decoder = match std::fs::File::open(&filename) {
                 Err(e) => {
                     log::warn!("Skipped file {} due to IO error: {e}", filename.display());
@@ -114,7 +115,12 @@ impl PrepareCue for PlaylistCue {
             Some(s)
         }).collect::<Vec<_>>();
 
-        let mut s: Box<dyn Source<Item = i16> + Send + Sync> = Box::new(source::from_iter(sources));
+        if self.shuffle {
+            sources.shuffle(&mut thread_rng())
+        }
+
+        let mut s: Box<dyn Source<Item = i16> + Send + Sync>;
+        s = Box::new(source::from_iter(sources));
 
         if self.repeat {
             s = Box::new(s.repeat_infinite())
