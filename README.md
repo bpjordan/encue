@@ -4,15 +4,70 @@ Encue (pronounced "on cue") is a simple TUI-based application
 for running sound cues. It is primarily designed for use in a
 theater setting.
 
-Encue is still WIP and most funcitonality described here is not
-yet implemented
-
 Encue gets sound cues from a "script" stored in the app's
-working directory. This script should be a YAML file named
-`script.yaml` and contain cues which reference audio files
-relative to the working directory.
+working directory. This script should be a
+[YAML](https://yaml.org/refcard.html) file named `script.yaml`
+and contain cues which reference audio files relative to the
+working directory.
 
-## Example Script file
+## Defining Cues
+
+The most important field of the script is the `cues` field,
+which contains an ordered list of all cues in the file.
+
+A cue contains the following fields:
+
+```yaml
+- label: ...        # A unique identifier for this cue used by other cues to reference this one
+  description: ...  # OPTIONAL: a short description of the cue to display to the user
+  hint: ...         # OPTIONAL: the line or visual cue that signals this cue
+  # ACTION: see below
+```
+
+### Cue actions
+
+In addition to the fields above, each cue must contain one
+action directive. Action directives usually have a short form
+with a single parameter and a long form with more advanced
+parameters.
+
+Possible action directives include:
+
+```yaml
+playback: <filename>  # Play the file at `filename`
+# OR
+playback:
+  file: <filename>
+  volume: <x>       # Volume (0-100) to start at (default: 100)
+  duration: <x>     # OPTIONAL: only play the first `x` seconds of the file
+  fade_in: <x>      # OPTIONAL: fade in for `x` seconds
+
+playlist: <folder>  # Play all files in `folder` as a playlist
+# OR
+playlist:
+  folder: ...
+  files:                  # OPTIONAL: list of files to play
+    - ...
+    - ...                 # Must specify at least one of `files` and `folder`
+    - ...
+  volume: ...             # Volume (0-100) to start at (default: 100)
+  loop: <true|false>      # Loop playlist (default: false)
+  shuffle: <true|false>   # Shuffle files in playlist (default: false)
+
+fade: <target>      # fade cue <target>
+# OR
+fade:
+  target: <target>
+  volume: ...       # Volume (0-100) to fade to (default: 0)
+  duration: ...     # Number of seconds to fade (default: 5)
+
+stop: <target>      # immediately stop target cue
+
+```
+
+### Example Script file
+
+The following is an example of a valid script file
 
 ```yaml
 cues:
@@ -26,68 +81,20 @@ cues:
     duration: 20
 ```
 
-## Planned Features Note
+## Planned Features
 
-Everything listed below is not yet implemented, and is only
-listed to give me a place to write down my plans for the app.
+`encue` is under active development as a hobby/side project. Below are
+some features I hope to implement soon:
 
-## Cues
+Additional UI elements:
+- An audio visualizer
+- A clock
+- A list of active playback cues with progress bar for elapsed time
+- Show cue loading status
+- Jump to a cue by its label
 
-Each cue contains a unique label, an action specifier, and an
-optional description field, plus an optional context field
-to give the line or visual cue to start the cue.
+Additional cue parameters:
+- Crossfade between files in a playlist
+- Fade out playback cues after set duration
 
-### Cue Fields
 
-All cues can have the following fields:
-
-- `label` (required) is a unique identifier for the cue, used both as a quick
-identifier for the user and internally to target cues. You can label
-cues according to your preferred convention. For example, `SQ1`, `SQ10`,
-`SQ0.1`, `1`, and `my-cue` are all valid labels as long as they are unique
-within the show.
-- `description` is a longer description of the cue, such as "Scene change music",
-"Phone rings", or "Distant explosion". Descriptions are only used for displaying
-to the user and need not be unique.
-- `context` provides the user with a note about when to start the cue. This can
-be a line or a description of a visual cue (ex. "Truvy slaps the radio")
-
-A cue also requires one action field, described [below](#cue-actions)
-
-All three YAML objects below are examples of a valid cue:
-
-```yaml
-- label: SQ0.5
-  playlist:
-    folder: preshow
-
-- label: 0.9
-  fade: SQ0
-
-- label: 1
-  description: Gunshot
-  context: 'Truvy: "Feel free to use as much hairspray as you want"'
-  playback: sfx/gunshot.mp3
-
-- label: stop-phone
-  context: Truvy picks up phone
-  stop: 1
-
-- label: SQ2
-  description: Gunshot & barking
-  context: 'Annelle: "I had no idea"'
-  playback:
-    file: sfx/gunshot_barking.wav
-```
-
-### Cue Actions
-
-The actual action of the cue can be one of the following:
-
-- A `playback` cue starts playing a sound from a single audio file
-- A `playlist` cue starts a playlist consisting of multiple audio files
-- A `fade` cue fades another cue or output master to a target level
-(default 0) over a target duration
-- A `stop` cue stops another cue or all cues
-
-The arguments to each action 
