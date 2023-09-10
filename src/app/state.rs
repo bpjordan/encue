@@ -7,16 +7,59 @@ use ratatui::widgets::{Table, TableState};
 use crate::logging::{TuiLoggerState, TuiLogger};
 
 use crate::prelude::*;
-use crate::cues::Script;
+use crate::cues::{Script, Cue};
 use crate::sound::{AudioEngine, ExecuteCueError, ExecutableCue};
 
 use super::widgets::cue_list;
 
-pub struct AppState<'a> {
+#[derive(Default)]
+enum LazyExecutable {
+    Ready(ExecutableCue),
+    Error,
+    #[default] NotLoaded,
+}
+
+impl LazyExecutable {
+    fn take(&mut self) -> Option<ExecutableCue> {
+        if let Self::Error = self {
+            None
+        } else {
+            std::mem::replace(self, Self::NotLoaded)
+                .inner()
+        }
+    }
+
+    fn inner(self) -> Option<ExecutableCue> {
+        match self {
+            LazyExecutable::Ready(exe) => Some(exe),
+            _ => None,
+        }
+    }
+
+    fn load(&mut self, cue: &Cue) {
+        if matches!(self, Self::Ready(_)) {
+            return
+        }
+
+        let label = cue.label();
+        match cue.action().prepare(Some(label)) {
+            Ok(exe) => {
+                log::debug!("Loaded cue `{label}`");
+                *self = LazyExecutable::Ready(exe);
+            },
+            Err(e) => {
+                log::error!("Error preparing cue `{label}`: {e}");
+                *self = LazyExecutable::Error;
+            },
+        }
+    }
+}
+
+pub struct AppState<'s> {
     active: bool,
-    widget: Table<'a>,
-    cuelist: Vec<&'a str>,
-    executables: HashMap<&'a str, ExecutableCue>,
+    widget: Table<'s>,
+    cuelist: &'s [Cue],
+    executables: Vec<LazyExecutable>,
     list_state: TableState,
     logger_state: Arc<Mutex<TuiLoggerState>>,
     engine: AudioEngine,
@@ -31,25 +74,19 @@ impl<'a> AppState<'a> {
         let engine = AudioEngine::try_init_default()?;
         log::info!("Audio engine initialized");
 
-        let executables = script.cuelist().into_iter().filter_map(|cue| {
-            let label = cue.label();
-            match cue.action().prepare(Some(label)) {
-                Ok(exe) => {
-                    log::debug!("Loaded cue `{label}`");
-                    Some((label, exe))
-                },
-                Err(e) => {
-                    log::error!("Error preparing cue `{label}`: {e}");
-                    None
-                },
-            }
+        let cuelist = script.cuelist();
+
+        let executables = cuelist.iter().map(|cue| {
+            let mut loader = LazyExecutable::default();
+            loader.load(cue);
+            loader
         }).collect();
         log::info!("Finished loading cues");
 
         Ok(Self {
             active: true,
             widget: cue_list(script.cuelist()),
-            cuelist: script.cue_names(),
+            cuelist,
             executables,
             list_state: TableState::default().with_selected(Some(0)),
             logger_state,
@@ -120,17 +157,19 @@ impl AppState<'_> {
     }
 
     pub fn execute_selected(&mut self) -> Result<(), ExecuteCueError> {
-        let Some(&cue_id) = self.list_state().selected()
-            .and_then(|idx| self.cuelist.get(idx))
+        let Some((loader, cue)) = self.list_state().selected()
+            .and_then(|idx| self.executables.get_mut(idx).zip(self.cuelist.get(idx)))
         else {
             return Err(ExecuteCueError::General("cue index out of bounds"))
         };
 
-        log::info!("Executing cue {cue_id}");
+        loader.load(cue);
 
-        let exe = self.executables.remove(cue_id).ok_or(ExecuteCueError::General("Cue not loaded"))?;
-
-        exe.execute(&mut self.engine)
+        if let Some(exe) = loader.take() {
+            exe.execute(&mut self.engine)
+        } else {
+            Err(ExecuteCueError::General("Cue failed to load"))
+        }
     }
 
     pub fn stop_all(&mut self) {
