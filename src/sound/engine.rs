@@ -45,4 +45,8 @@ impl AudioEngine {
             s.stop()
         }
     }
+
+    pub fn gc(&mut self) {
+        self.sinks.retain(|_, s| !s.empty())
+    }
 }
