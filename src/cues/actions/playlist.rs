@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use thiserror::Error;
 
-use crate::{sound::{PrepareCue, PlaybackExecutable}, util::defaults};
+use crate::{sound::{PrepareCue, PlaybackExecutable}};
 
 #[serde_as]
 #[cfg_attr(test, derive(Eq, PartialEq))]
