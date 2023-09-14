@@ -1,7 +1,10 @@
 pub mod string_or_struct {
-    use std::{str::FromStr, marker::PhantomData, convert::Infallible};
+    use std::{convert::Infallible, marker::PhantomData, str::FromStr};
 
-    use serde::{Deserialize, Deserializer, de::{Visitor, self}};
+    use serde::{
+        de::{self, Visitor},
+        Deserialize, Deserializer,
+    };
 
     pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
     where

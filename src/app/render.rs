@@ -1,11 +1,12 @@
-
-use ratatui::{prelude::*, widgets::{Widget, Paragraph, Block, Borders}};
-use crate::{prelude::*, logging::LogWidget};
+use crate::{logging::LogWidget, prelude::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Paragraph, Widget},
+};
 
 use super::AppState;
 
 pub fn render<B: Backend>(term: &mut Terminal<B>, app: &mut AppState) -> Result<()> {
-
     term.draw(|f| {
         let [top, main, bottom, keys] = *Layout::default()
             .direction(Direction::Vertical)
@@ -32,6 +33,8 @@ pub fn render<B: Backend>(term: &mut Terminal<B>, app: &mut AppState) -> Result<
             return;
         };
 
+        *app.list_height_mut() = main.height.checked_sub(2).unwrap_or(0);
+
         f.render_stateful_widget(app.widget().clone(), main, app.list_state_mut());
         f.render_widget(rta(), top_left);
         f.render_widget(clock(), top_mid);
@@ -40,61 +43,37 @@ pub fn render<B: Backend>(term: &mut Terminal<B>, app: &mut AppState) -> Result<
         if let Ok(mut state) = app.logger_state().lock() {
             f.render_stateful_widget(logger(), bottom, &mut state)
         }
-
     })?;
 
     Ok(())
 }
 
 fn logger<'a>() -> LogWidget<'a> {
-
-    LogWidget::default()
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Log")
-        )
+    LogWidget::default().block(Block::default().borders(Borders::ALL).title("Log"))
 }
 
 fn rta() -> impl Widget {
-
     Paragraph::new("Placeholder")
         .alignment(Alignment::Center)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Output")
-        )
+        .block(Block::default().borders(Borders::ALL).title("Output"))
 }
 
 fn active_list() -> impl Widget {
-
     Paragraph::new("Placeholder")
         .alignment(Alignment::Center)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Active Cues")
-        )
+        .block(Block::default().borders(Borders::ALL).title("Active Cues"))
 }
 
 fn clock() -> impl Widget {
-
     Paragraph::new("Placeholder")
         .alignment(Alignment::Center)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Clock")
-        )
+        .block(Block::default().borders(Borders::ALL).title("Clock"))
 }
 
 fn hotkey_guide() -> impl Widget {
-
-    Paragraph::new("[q] Quit | [s]: Stop All | [j]: Select Next | [k]: Select Prev | [<Space>]: Run Selected")
-        .alignment(Alignment::Center)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-        )
+    Paragraph::new(
+        "[q] Quit | [s]: Stop All | [j]: Select Next | [k]: Select Prev | [<Space>]: Run Selected",
+    )
+    .alignment(Alignment::Center)
+    .block(Block::default().borders(Borders::ALL))
 }

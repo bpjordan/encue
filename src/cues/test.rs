@@ -4,7 +4,6 @@ use super::*;
 
 #[test]
 fn deserialize_full() {
-
     let yaml = "
 master: 80
 cuelist:
@@ -35,25 +34,26 @@ cuelist:
             actions::PlaybackCue::new("sound.wav")
                 .for_duration(Duration::from_secs(45))
                 .fade_in_for(Duration::from_secs(5))
-                .fade_out_for(Duration::from_secs(10))
-        ).with_description("Sound Cue 1")
-            .with_hint("pg. 1"),
+                .fade_out_for(Duration::from_secs(10)),
+        )
+        .with_description("Sound Cue 1")
+        .with_hint("pg. 1"),
         Cue::new(
             "SQ2",
             actions::FadeCue::new("SQ1")
                 .to_volume(40)
-                .for_duration(Duration::from_secs(10))
-        ).with_description("Fade Down SQ1")
-            .with_hint("pg. 2"),
-        Cue::new(
-            "SQ3",
-            actions::StopCue::new("all")
-        ).with_description("Hard Stop")
+                .for_duration(Duration::from_secs(10)),
+        )
+        .with_description("Fade Down SQ1")
+        .with_hint("pg. 2"),
+        Cue::new("SQ3", actions::StopCue::new("all"))
+            .with_description("Hard Stop")
             .with_hint("curtain"),
-    ]).with_master(80);
+    ])
+    .with_master(80);
 
     let de = serde_yaml::from_str::<Script>(yaml).expect("Failed to deserialize");
-    
+
     assert_eq!(de, show);
 }
 
@@ -75,26 +75,15 @@ cuelist:
     let show = Script::new(vec![
         Cue::new(
             "SQ1",
-            cue::CueAction::Playback(
-                actions::PlaybackCue::new("sound.wav")
-            )
+            cue::CueAction::Playback(actions::PlaybackCue::new("sound.wav")),
         ),
-        Cue::new(
-            "SQ2",
-            cue::CueAction::Fade(
-                actions::FadeCue::new("SQ1")
-            )
-        ),
-        Cue::new(
-            "SQ3",
-            cue::CueAction::Stop(
-                actions::StopCue::new("all")
-            )
-        ),
-    ]).with_master(100);
+        Cue::new("SQ2", cue::CueAction::Fade(actions::FadeCue::new("SQ1"))),
+        Cue::new("SQ3", cue::CueAction::Stop(actions::StopCue::new("all"))),
+    ])
+    .with_master(100);
 
     let de = serde_yaml::from_str::<Script>(yaml).expect("Failed to deserialize");
-    
+
     assert_eq!(de, show);
 }
 
@@ -113,26 +102,14 @@ cuelist:
     let show = Script::new(vec![
         Cue::new(
             "SQ1",
-            cue::CueAction::Playback(
-                actions::PlaybackCue::new("sound.wav")
-            )
+            cue::CueAction::Playback(actions::PlaybackCue::new("sound.wav")),
         ),
-        Cue::new(
-            "SQ2",
-            cue::CueAction::Fade(
-                actions::FadeCue::new("SQ1")
-            )
-        ),
-        Cue::new(
-            "SQ3",
-            cue::CueAction::Stop(
-                actions::StopCue::new("all")
-            )
-        ),
-    ]).with_master(100);
+        Cue::new("SQ2", cue::CueAction::Fade(actions::FadeCue::new("SQ1"))),
+        Cue::new("SQ3", cue::CueAction::Stop(actions::StopCue::new("all"))),
+    ])
+    .with_master(100);
 
     let de = serde_yaml::from_str::<Script>(yaml).expect("Failed to deserialize");
-    
+
     assert_eq!(de, show);
 }
-

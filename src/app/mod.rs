@@ -1,9 +1,7 @@
-
+pub mod events;
 pub mod render;
 pub mod state;
-pub mod widgets;
-pub mod events;
 pub mod update;
+pub mod widgets;
 
 pub use state::AppState;
-

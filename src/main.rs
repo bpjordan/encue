@@ -1,21 +1,19 @@
-
-mod error;
 mod app;
-mod terminal;
-mod prelude;
 mod cues;
+mod error;
 mod logging;
-mod util;
+mod prelude;
 mod sound;
+mod terminal;
+mod util;
 
-use app::{AppState, events::EventListener, update::update};
+use app::{events::EventListener, update::update, AppState};
 use cues::Script;
 
 use crate::prelude::*;
 
 fn main() -> Result<()> {
-    let script = Script::load()?
-        .validate()?;
+    let script = Script::load()?.validate()?;
 
     let mut app = AppState::new(&script)?;
 
@@ -24,7 +22,9 @@ fn main() -> Result<()> {
     let mut term = terminal::setup_terminal()?;
 
     let rc = loop {
-        if !app.active() { break Ok(()) };
+        if !app.active() {
+            break Ok(());
+        };
         let event = match events.next() {
             Ok(e) => e,
             Err(e) => break Err(e),
@@ -39,4 +39,3 @@ fn main() -> Result<()> {
 
     rc
 }
-

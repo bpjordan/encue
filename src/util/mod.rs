@@ -1,3 +1,2 @@
-
-pub mod serde;
 pub mod defaults;
+pub mod serde;

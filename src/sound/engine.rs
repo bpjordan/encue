@@ -18,7 +18,7 @@ impl AudioEngine {
         Ok(Self {
             _output_stream,
             output_handle,
-            sinks: HashMap::new()
+            sinks: HashMap::new(),
         })
     }
 

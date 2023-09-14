@@ -19,7 +19,6 @@ pub struct Script {
 
 #[allow(dead_code)]
 impl Script {
-
     pub fn cuelist(&self) -> &[Cue] {
         self.cuelist.as_ref()
     }
@@ -29,16 +28,12 @@ impl Script {
     }
 
     pub fn cue_names(&self) -> Vec<&str> {
-        self.cuelist()
-            .iter()
-            .map(Cue::label)
-            .collect()
+        self.cuelist().iter().map(Cue::label).collect()
     }
 }
 
 #[allow(dead_code)]
 impl Script {
-
     pub fn load() -> Result<Self> {
         let f = fs::File::open("script.yaml")?;
         let yaml = io::read_to_string(f)?;
@@ -49,7 +44,7 @@ impl Script {
     pub fn new(cues: Vec<Cue>) -> Self {
         Self {
             cuelist: cues,
-            master: 100
+            master: 100,
         }
     }
 
@@ -57,6 +52,4 @@ impl Script {
         self.master = master;
         self
     }
-
 }
-

@@ -1,15 +1,17 @@
 use std::{
-    path::{PathBuf, Path},
+    convert::Infallible,
+    io::{self, BufReader},
+    path::{Path, PathBuf},
     str::FromStr,
-    convert::Infallible, time::Duration, io::{self, BufReader}
+    time::Duration,
 };
 
-use rodio::{Source, Decoder, Sink};
+use rodio::{Decoder, Sink, Source};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use thiserror::Error;
 
-use crate::sound::{PrepareCue, PlaybackExecutable};
+use crate::sound::{PlaybackExecutable, PrepareCue};
 
 #[serde_as]
 #[cfg_attr(test, derive(Eq, PartialEq))]
@@ -19,6 +21,10 @@ pub struct PlaybackCue {
 
     volume: Option<u8>,
 
+    #[serde(default)]
+    #[serde(alias = "loop")]
+    repeat: bool,
+
     #[serde_as(as = "Option<serde_with::DurationSecondsWithFrac>")]
     duration: Option<Duration>,
 
@@ -26,11 +32,10 @@ pub struct PlaybackCue {
     fade_in: Option<Duration>,
 
     #[serde_as(as = "Option<serde_with::DurationSecondsWithFrac>")]
-    fade_out: Option<Duration>
+    fade_out: Option<Duration>,
 }
 
 impl PlaybackCue {
-
     pub fn file(&self) -> &PathBuf {
         &self.file
     }
@@ -54,6 +59,7 @@ impl PlaybackCue {
         Self {
             file: file.as_ref().to_path_buf(),
             duration: None,
+            repeat: false,
             volume: None,
             fade_in: None,
             fade_out: None,
@@ -90,7 +96,7 @@ pub enum PlaybackCueError {
     File(#[from] io::Error),
 
     #[error("Decoder error: {0}")]
-    Decode(#[from] rodio::decoder::DecoderError)
+    Decode(#[from] rodio::decoder::DecoderError),
 }
 
 impl PrepareCue for PlaybackCue {
@@ -101,10 +107,15 @@ impl PrepareCue for PlaybackCue {
     fn prepare(&self, label: Option<&str>) -> Result<Self::Executable, Self::PrepareError> {
         let f = std::fs::File::open(self.file())?;
 
-        let mut s: Box<dyn Source<Item = i16> + Send + Sync> = Box::new(Decoder::new(BufReader::new(f))?);
+        let mut s: Box<dyn Source<Item = i16> + Send + Sync> =
+            Box::new(Decoder::new(BufReader::new(f))?);
 
         if let Some(d) = self.duration() {
             s = Box::new(s.take_duration(d));
+        }
+
+        if self.repeat {
+            s = Box::new(s.repeat_infinite())
         }
 
         if let Some(d) = self.fade_in() {
@@ -119,6 +130,10 @@ impl PrepareCue for PlaybackCue {
             sink.set_volume(vol as f32 / 100.0)
         }
 
-        Ok(PlaybackExecutable::new(label.map(ToString::to_string), sink, queue))
+        Ok(PlaybackExecutable::new(
+            label.map(ToString::to_string),
+            sink,
+            queue,
+        ))
     }
 }

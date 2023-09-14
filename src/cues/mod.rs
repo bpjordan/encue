@@ -1,11 +1,11 @@
-
-mod script;
 mod cue;
+mod script;
 mod validation;
 
 pub mod actions;
 
-pub use script::Script;
 pub use cue::Cue;
+pub use script::Script;
 
-#[cfg(test)] mod test;
+#[cfg(test)]
+mod test;

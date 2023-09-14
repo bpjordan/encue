@@ -1,14 +1,13 @@
-
 use std::sync::{Arc, Mutex};
 
 use log::LevelFilter;
 use ratatui::widgets::{Table, TableState};
 
-use crate::logging::{TuiLoggerState, TuiLogger};
+use crate::logging::{TuiLogger, TuiLoggerState};
 
+use crate::cues::{Cue, Script};
 use crate::prelude::*;
-use crate::cues::{Script, Cue};
-use crate::sound::{AudioEngine, ExecuteCueError, ExecutableCue};
+use crate::sound::{AudioEngine, ExecutableCue, ExecuteCueError};
 
 use super::widgets::cue_list;
 
@@ -16,7 +15,8 @@ use super::widgets::cue_list;
 enum LazyExecutable {
     Ready(ExecutableCue),
     Error,
-    #[default] NotLoaded,
+    #[default]
+    NotLoaded,
 }
 
 impl LazyExecutable {
@@ -24,8 +24,7 @@ impl LazyExecutable {
         if let Self::Error = self {
             None
         } else {
-            std::mem::replace(self, Self::NotLoaded)
-                .inner()
+            std::mem::replace(self, Self::NotLoaded).inner()
         }
     }
 
@@ -38,7 +37,7 @@ impl LazyExecutable {
 
     fn load(&mut self, cue: &Cue) {
         if matches!(self, Self::Ready(_)) {
-            return
+            return;
         }
 
         let label = cue.label();
@@ -46,11 +45,11 @@ impl LazyExecutable {
             Ok(exe) => {
                 log::debug!("Loaded cue `{label}`");
                 *self = LazyExecutable::Ready(exe);
-            },
+            }
             Err(e) => {
                 log::error!("Error preparing cue `{label}`: {e}");
                 *self = LazyExecutable::Error;
-            },
+            }
         }
     }
 }
@@ -63,11 +62,11 @@ pub struct AppState<'s> {
     list_state: TableState,
     logger_state: Arc<Mutex<TuiLoggerState>>,
     engine: AudioEngine,
+    list_height: u16,
 }
 
 impl<'a> AppState<'a> {
     pub fn new(script: &'a Script) -> Result<Self> {
-
         let logger_state = TuiLogger::init(LevelFilter::Debug)?;
         log::info!("Logging initialized");
 
@@ -76,11 +75,14 @@ impl<'a> AppState<'a> {
 
         let cuelist = script.cuelist();
 
-        let executables = cuelist.iter().map(|cue| {
-            let mut loader = LazyExecutable::default();
-            loader.load(cue);
-            loader
-        }).collect();
+        let executables = cuelist
+            .iter()
+            .map(|cue| {
+                let mut loader = LazyExecutable::default();
+                loader.load(cue);
+                loader
+            })
+            .collect();
         log::info!("Finished loading cues");
 
         Ok(Self {
@@ -91,6 +93,7 @@ impl<'a> AppState<'a> {
             list_state: TableState::default().with_selected(Some(0)),
             logger_state,
             engine,
+            list_height: 0,
         })
     }
 
@@ -100,11 +103,9 @@ impl<'a> AppState<'a> {
 
         Ok(())
     }
-
 }
 
 impl<'a> AppState<'a> {
-
     pub fn active(&self) -> bool {
         self.active
     }
@@ -125,35 +126,46 @@ impl<'a> AppState<'a> {
         &self.widget
     }
 
+    pub fn list_height_mut(&mut self) -> &mut u16 {
+        &mut self.list_height
+    }
 }
 
 impl AppState<'_> {
     pub fn select_next(&mut self) -> Result<()> {
         let i = match self.list_state_mut().selected() {
-            Some(t) if t < self.cuelist.len() - 1 => {
-                t + 1
-            }
+            Some(t) if t < self.cuelist.len() - 1 => t + 1,
 
             _ => 0,
         };
 
         self.list_state_mut().select(Some(i));
+        self.recenter();
 
         Ok(())
     }
-    
+
     pub fn select_prev(&mut self) -> Result<()> {
         let i = match self.list_state_mut().selected() {
-            Some(t) if t > 0 => {
-                t - 1
-            }
+            Some(t) if t > 0 => t - 1,
 
             _ => self.cuelist.len() - 1,
         };
 
         self.list_state_mut().select(Some(i));
+        self.recenter();
 
         Ok(())
+    }
+
+    fn recenter(&mut self) {
+        let Some(selected) = self.list_state().selected() else {
+            return
+        };
+
+        let list_height = self.list_height;
+        let offset = self.list_state_mut().offset_mut();
+        *offset = selected.saturating_sub(list_height as usize / 2);
     }
 
     pub fn execute_selected(&mut self) -> Result<(), ExecuteCueError> {

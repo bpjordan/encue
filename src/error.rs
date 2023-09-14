@@ -3,7 +3,6 @@ use std::{path::PathBuf, sync::mpsc};
 use crate::app::events::Event;
 
 #[allow(unused)]
-
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
 pub enum FatalError {

@@ -1,14 +1,12 @@
-use std::{
-    time::Duration,
-    str::FromStr,
-    convert::Infallible, ops::Mul, thread
-};
+use std::{convert::Infallible, ops::Mul, str::FromStr, thread, time::Duration};
 
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
-use crate::{util::defaults, sound::{ExecuteCue, ExecuteCueError}};
-
+use crate::{
+    sound::{ExecuteCue, ExecuteCueError},
+    util::defaults,
+};
 
 #[serde_as]
 #[cfg_attr(test, derive(Eq, PartialEq))]
@@ -21,7 +19,7 @@ pub struct FadeCue {
 
     #[serde_as(as = "serde_with::DurationSecondsWithFrac")]
     #[serde(default = "defaults::default_fade_duration")]
-    duration: Duration
+    duration: Duration,
 }
 
 impl FadeCue {
@@ -73,9 +71,7 @@ impl ExecuteCue for FadeCue {
             return Err(ExecuteCueError::MissingTarget(self.target))
         };
 
-        let initial_vol = sink.volume()
-            .mul(100_f32)
-            .round() as i32;
+        let initial_vol = sink.volume().mul(100_f32).round() as i32;
 
         let target_vol = self.volume() as i32;
 
@@ -83,11 +79,16 @@ impl ExecuteCue for FadeCue {
             .checked_sub(target_vol)
             .ok_or(ExecuteCueError::General("overflow"))?;
 
-        let fade_rate = self.duration()
+        let fade_rate = self
+            .duration()
             .checked_div(steps.unsigned_abs())
             .unwrap_or(self.duration().clone());
 
-        log::trace!("fade from {initial_vol} to {}; {steps} steps with {}ms between", self.volume(), fade_rate.as_millis());
+        log::trace!(
+            "fade from {initial_vol} to {}; {steps} steps with {}ms between",
+            self.volume(),
+            fade_rate.as_millis()
+        );
 
         let vols = if target_vol > initial_vol {
             itertools::Either::Left(initial_vol..=target_vol)

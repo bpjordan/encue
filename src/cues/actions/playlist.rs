@@ -1,25 +1,33 @@
-use std::{path::{PathBuf, Path}, str::FromStr, convert::Infallible, time::Duration, io::{self, BufReader}};
+use std::{
+    convert::Infallible,
+    io::{self, BufReader},
+    path::{Path, PathBuf},
+    str::FromStr,
+    time::Duration,
+};
 
 use rand::{seq::SliceRandom, thread_rng};
-use rodio::{Sink, Source, Decoder, source};
+use rodio::{source, Decoder, Sink, Source};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use thiserror::Error;
 
-use crate::{sound::{PrepareCue, PlaybackExecutable}};
+use crate::sound::{PlaybackExecutable, PrepareCue};
 
 #[serde_as]
 #[cfg_attr(test, derive(Eq, PartialEq))]
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct PlaylistCue {
     folder: Option<PathBuf>,
+
+    #[serde(default)]
     files: Vec<PathBuf>,
 
     #[serde(default)]
+    #[serde(alias = "loop")]
     repeat: bool,
 
     #[serde(default)]
-    #[serde(alias = "loop")]
     shuffle: bool,
 
     volume: Option<u8>,
@@ -80,7 +88,7 @@ pub enum PlaylistCueError {
     File(#[from] io::Error),
 
     #[error("Decoder error: {0}")]
-    Decode(#[from] rodio::decoder::DecoderError)
+    Decode(#[from] rodio::decoder::DecoderError),
 }
 
 impl PrepareCue for PlaylistCue {
@@ -92,30 +100,38 @@ impl PrepareCue for PlaylistCue {
         let mut files = self.files.clone();
 
         if let Some(folder) = self.folder().to_owned() {
-            files.extend(folder.read_dir()?.filter_map(|entry| {
-                Some(entry.ok()?.path())
-            }));
+            files.extend(
+                folder
+                    .read_dir()?
+                    .filter_map(|entry| Some(entry.ok()?.path())),
+            );
         }
 
-        let mut sources = files.into_iter().filter_map(|filename| {
-            let decoder = match std::fs::File::open(&filename) {
-                Err(e) => {
-                    log::warn!("Skipped file {} due to IO error: {e}", filename.display());
-                    return None
-                },
-                Ok(f) => Decoder::new(BufReader::new(f)),
-            };
+        let mut sources = files
+            .into_iter()
+            .filter_map(|filename| {
+                let decoder = match std::fs::File::open(&filename) {
+                    Err(e) => {
+                        log::warn!("Skipped file {} due to IO error: {e}", filename.display());
+                        return None;
+                    }
+                    Ok(f) => Decoder::new(BufReader::new(f)),
+                };
 
-            let s: Box<dyn Source<Item = i16> + Send + Sync> = match decoder {
-                Ok(d) => Box::new(d),
-                Err(e) => {
-                    log::warn!("Skipped loading file {} due to audio decoding error: {e}", filename.display());
-                    return None
-                },
-            };
+                let s: Box<dyn Source<Item = i16> + Send + Sync> = match decoder {
+                    Ok(d) => Box::new(d),
+                    Err(e) => {
+                        log::warn!(
+                            "Skipped loading file {} due to audio decoding error: {e}",
+                            filename.display()
+                        );
+                        return None;
+                    }
+                };
 
-            Some(s)
-        }).collect::<Vec<_>>();
+                Some(s)
+            })
+            .collect::<Vec<_>>();
 
         if self.shuffle {
             sources.shuffle(&mut thread_rng())
@@ -136,7 +152,10 @@ impl PrepareCue for PlaylistCue {
             sink.set_volume(vol as f32 / 100.0)
         }
 
-        Ok(PlaybackExecutable::new(label.map(ToString::to_string), sink, queue))
+        Ok(PlaybackExecutable::new(
+            label.map(ToString::to_string),
+            sink,
+            queue,
+        ))
     }
 }
-

@@ -1,21 +1,16 @@
-use rodio::{Sink, queue::SourcesQueueOutput};
+use rodio::{queue::SourcesQueueOutput, Sink};
 
 use super::{ExecuteCue, ExecuteCueError};
-
 
 pub struct PlaybackExecutable {
     label: Option<String>,
     queue: SourcesQueueOutput<f32>,
-    sink: Sink
+    sink: Sink,
 }
 
 impl PlaybackExecutable {
     pub fn new(label: Option<String>, sink: Sink, queue: SourcesQueueOutput<f32>) -> Self {
-        Self {
-            sink,
-            queue,
-            label,
-        }
+        Self { sink, queue, label }
     }
 }
 

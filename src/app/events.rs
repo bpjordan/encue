@@ -1,6 +1,11 @@
-use std::{sync::mpsc, thread, time::{Duration, Instant}, io};
+use std::{
+    io,
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
+};
 
-use crossterm::event::{KeyEvent, self};
+use crossterm::event::{self, KeyEvent};
 
 use crate::prelude::*;
 
@@ -21,21 +26,21 @@ pub struct EventListener {
 
 impl EventListener {
     pub fn init() -> Self {
-
         let (tx, rx) = mpsc::channel();
 
         let handler = thread::spawn(move || {
             let mut last_tick = Instant::now();
 
             loop {
-                let timeout = TICKRATE.checked_sub(last_tick.elapsed())
+                let timeout = TICKRATE
+                    .checked_sub(last_tick.elapsed())
                     .unwrap_or_else(|| Duration::ZERO);
 
                 let ready = match event::poll(timeout) {
                     Ok(r) => r,
                     Err(e) => {
                         tx.send(Event::Error(e))?;
-                        break
+                        break;
                     }
                 };
 
@@ -44,16 +49,18 @@ impl EventListener {
                     match event {
                         Ok(event::Event::Key(k)) => {
                             tx.send(Event::Key(k))?;
-                        },
+                        }
                         Ok(event::Event::Resize(r, c)) => {
                             tx.send(Event::Resize(r, c))?;
-                        },
+                        }
                         Err(e) => {
-                            log::warn!("event handler thread encountered error reading event: {e:?}");
+                            log::warn!(
+                                "event handler thread encountered error reading event: {e:?}"
+                            );
                             tx.send(Event::Error(e))?;
-                            break
-                        },
-                        _ => continue
+                            break;
+                        }
+                        _ => continue,
                     }
                 } else {
                     tx.send(Event::Tick)?;
@@ -65,12 +72,11 @@ impl EventListener {
         });
 
         Self { rx, handler }
-
     }
 
     pub fn next(&self) -> Result<Event> {
         if self.handler.is_finished() {
-            return Err(FatalError::ThreadPanic)
+            return Err(FatalError::ThreadPanic);
         }
         Ok(self.rx.recv()?)
     }

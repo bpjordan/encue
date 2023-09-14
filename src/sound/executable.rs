@@ -1,4 +1,4 @@
-use std::{error::Error, convert::Infallible};
+use std::{convert::Infallible, error::Error};
 
 use rodio::PlayError;
 use thiserror::Error;
@@ -9,7 +9,6 @@ use super::{AudioEngine, PlaybackExecutable};
 
 #[derive(Debug, Error)]
 pub enum ExecuteCueError {
-
     #[error("Couldn't find target cue {0}")]
     MissingTarget(String),
 
@@ -17,7 +16,7 @@ pub enum ExecuteCueError {
     Playback(#[from] PlayError),
 
     #[error("{0}")]
-    General(&'static str)
+    General(&'static str),
 }
 
 pub trait ExecuteCue {

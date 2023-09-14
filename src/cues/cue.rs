@@ -3,7 +3,7 @@ use std::error::Error;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
-use crate::sound::{PrepareCue, ExecutableCue};
+use crate::sound::{ExecutableCue, PrepareCue};
 
 use super::actions::*;
 
@@ -17,6 +17,7 @@ pub struct Cue {
     description: String,
 
     #[serde(default)]
+    #[serde(alias = "cue")]
     hint: String,
 
     #[serde(flatten)]
@@ -48,7 +49,7 @@ impl Cue {
             label: label.to_string(),
             description: "".to_string(),
             hint: "".to_string(),
-            action: action.into()
+            action: action.into(),
         }
     }
 
@@ -68,7 +69,6 @@ impl Cue {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum CueAction {
-
     #[serde(deserialize_with = "crate::util::serde::string_or_struct::deserialize")]
     Playlist(PlaylistCue),
 
@@ -80,7 +80,6 @@ pub enum CueAction {
 
     #[serde(deserialize_with = "crate::util::serde::string_or_struct::deserialize")]
     Stop(StopCue),
-
     // Group(CueGroup),
 }
 
@@ -109,7 +108,10 @@ impl From<PlaybackCue> for CueAction {
 }
 
 impl CueAction {
-    pub fn prepare(&self, label: Option<&str>) -> Result<ExecutableCue, Box<dyn Error + Send + Sync>> {
+    pub fn prepare(
+        &self,
+        label: Option<&str>,
+    ) -> Result<ExecutableCue, Box<dyn Error + Send + Sync>> {
         match self {
             CueAction::Playlist(p) => Ok(ExecutableCue::Playback(p.prepare(label)?)),
             CueAction::Playback(p) => Ok(ExecutableCue::Playback(p.prepare(label)?)),

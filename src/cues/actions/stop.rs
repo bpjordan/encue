@@ -1,5 +1,4 @@
-
-use std::{str::FromStr, convert::Infallible};
+use std::{convert::Infallible, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -21,7 +20,9 @@ impl StopCue {
 
 impl StopCue {
     pub fn new(target: impl ToString) -> Self {
-        Self { target: target.to_string() }
+        Self {
+            target: target.to_string(),
+        }
     }
 }
 

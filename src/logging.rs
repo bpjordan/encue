@@ -1,14 +1,16 @@
+use std::{
+    sync::{Arc, Mutex},
+    time::Instant,
+};
 
-use std::{sync::{Arc, Mutex}, time::Instant};
-
-use log::{Log, LevelFilter, Level};
-use ratatui::widgets::{StatefulWidget, Widget, Block};
+use log::{Level, LevelFilter, Log};
+use ratatui::widgets::{Block, StatefulWidget, Widget};
 
 use crate::prelude::*;
 use ratatui::prelude::*;
 
 #[derive(Clone)]
-pub struct TuiLogger{
+pub struct TuiLogger {
     level: LevelFilter,
     state: Arc<Mutex<TuiLoggerState>>,
 }
@@ -42,14 +44,14 @@ impl TuiLogger {
     pub fn new(log_level: LevelFilter) -> Self {
         Self {
             level: log_level,
-            state: Default::default()
+            state: Default::default(),
         }
     }
 }
 
 #[derive(Default, Clone)]
-pub struct LogWidget<'a>{
-    block: Option<Block<'a>>
+pub struct LogWidget<'a> {
+    block: Option<Block<'a>>,
 }
 
 impl<'a> LogWidget<'a> {
@@ -63,7 +65,6 @@ impl StatefulWidget for LogWidget<'_> {
     type State = TuiLoggerState;
 
     fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-
         let text_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
@@ -71,19 +72,14 @@ impl StatefulWidget for LogWidget<'_> {
                 b.render(area, buf);
 
                 inner_area
-            },
+            }
 
-            None => area
+            None => area,
         };
 
-        let history_to_show = state.0
-            .iter()
-            .rev()
-            .take(text_area.height as usize)
-            .rev();
+        let history_to_show = state.0.iter().rev().take(text_area.height as usize).rev();
 
         for (y, (level, _time, msg)) in history_to_show.enumerate() {
-
             let level_color = match level {
                 Level::Error => Color::Red,
                 Level::Warn => Color::Yellow,
@@ -92,12 +88,14 @@ impl StatefulWidget for LogWidget<'_> {
                 Level::Trace => Color::Cyan,
             };
 
-            buf.set_line(text_area.left(), text_area.top() + y as u16,
+            buf.set_line(
+                text_area.left(),
+                text_area.top() + y as u16,
                 &Line::from(vec![
                     Span::from(format!("{level:<5}: ")).bold().fg(level_color),
-                    Span::from(msg.to_string())
+                    Span::from(msg.to_string()),
                 ]),
-                text_area.width
+                text_area.width,
             );
         }
     }
@@ -105,19 +103,13 @@ impl StatefulWidget for LogWidget<'_> {
 
 impl Widget for LogWidget<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        StatefulWidget::render(
-            self,
-            area,
-            buf,
-            &mut TuiLoggerState::default()
-        )
+        StatefulWidget::render(self, area, buf, &mut TuiLoggerState::default())
     }
 }
 
 impl Log for TuiLogger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
-        metadata.target().starts_with("encue") &&
-        metadata.level() <= self.level
+        metadata.target().starts_with("encue") && metadata.level() <= self.level
     }
 
     fn log(&self, record: &log::Record) {
@@ -129,11 +121,7 @@ impl Log for TuiLogger {
             return;
         };
 
-        history.push((
-            record.level(),
-            Instant::now(),
-            record.args().to_string(),
-        ));
+        history.push((record.level(), Instant::now(), record.args().to_string()));
     }
 
     fn flush(&self) {
