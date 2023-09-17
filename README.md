@@ -97,4 +97,6 @@ Additional cue parameters:
 - Crossfade between files in a playlist
 - Fade out playback cues after set duration
 
+Programmable Soft keys
+- Quick cues (fade current cue, playback, etc)
 
