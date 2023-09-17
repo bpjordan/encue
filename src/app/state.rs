@@ -189,4 +189,8 @@ impl AppState<'_> {
         log::info!("Stopping all active cues");
         self.engine.stop_all()
     }
+
+    pub fn upkeep(&mut self) {
+        self.engine.gc();
+    }
 }

@@ -7,7 +7,8 @@ use crate::prelude::*;
 
 pub fn update<B: Backend>(event: Event, term: &mut Terminal<B>, app: &mut AppState) -> Result<()> {
     match event {
-        Event::Tick | Event::Resize(_, _) => {}
+        Event::Tick => app.upkeep(),
+        Event::Resize(_, _) => {}
         Event::Key(k) => handle_key(k, app)?,
         Event::Error(e) => return Err(e.into()),
     }

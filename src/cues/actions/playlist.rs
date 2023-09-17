@@ -137,15 +137,13 @@ impl PrepareCue for PlaylistCue {
                 }
             };
 
+            log::debug!("Starting playlist file `{}`", filename.display());
+
             Some(s)
         });
 
-        let mut s: Box<dyn Source<Item = i16> + Send + Sync>;
+        let s: Box<dyn Source<Item = i16> + Send + Sync>;
         s = Box::new(source::from_iter(sources));
-
-        if self.repeat {
-            s = Box::new(s.repeat_infinite())
-        }
 
         let (sink, queue) = Sink::new_idle();
 
