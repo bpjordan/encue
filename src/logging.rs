@@ -1,10 +1,8 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::Instant,
-};
+use std::sync::{Arc, Mutex};
 
 use log::{Level, LevelFilter, Log};
 use ratatui::widgets::{Block, StatefulWidget, Widget};
+use time::{OffsetDateTime, macros::format_description};
 
 use crate::prelude::*;
 use ratatui::prelude::*;
@@ -16,10 +14,10 @@ pub struct TuiLogger {
 }
 
 #[derive(Default, Clone)]
-pub struct TuiLoggerState(Vec<(Level, Instant, String)>);
+pub struct TuiLoggerState(Vec<(Level, OffsetDateTime, String)>);
 
 impl TuiLoggerState {
-    fn push(&mut self, args: (Level, Instant, String)) {
+    fn push(&mut self, args: (Level, OffsetDateTime, String)) {
         self.0.push(args)
     }
 
@@ -79,7 +77,7 @@ impl StatefulWidget for LogWidget<'_> {
 
         let history_to_show = state.0.iter().rev().take(text_area.height as usize).rev();
 
-        for (y, (level, _time, msg)) in history_to_show.enumerate() {
+        for (y, (level, time, msg)) in history_to_show.enumerate() {
             let level_color = match level {
                 Level::Error => Color::Red,
                 Level::Warn => Color::Yellow,
@@ -88,10 +86,13 @@ impl StatefulWidget for LogWidget<'_> {
                 Level::Trace => Color::Cyan,
             };
 
+            let timestamp = time.time().format(format_description!("[[[hour padding:zero]:[minute padding:zero]:[second padding:zero].[subsecond digits:3]]")).unwrap_or(String::from("INVALID TIME"));
+
             buf.set_line(
                 text_area.left(),
                 text_area.top() + y as u16,
                 &Line::from(vec![
+                    Span::from(format!("{timestamp} ")),
                     Span::from(format!("{level:<5}: ")).bold().fg(level_color),
                     Span::from(msg.to_string()),
                 ]),
@@ -117,11 +118,14 @@ impl Log for TuiLogger {
             return;
         }
 
+        let timestamp =
+            time::OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
+
         let Ok(mut history) = self.state.lock() else {
             return;
         };
 
-        history.push((record.level(), Instant::now(), record.args().to_string()));
+        history.push((record.level(), timestamp, record.args().to_string()));
     }
 
     fn flush(&self) {
