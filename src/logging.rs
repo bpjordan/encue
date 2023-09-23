@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use log::{Level, LevelFilter, Log};
 use ratatui::widgets::{Block, StatefulWidget, Widget};
-use time::{OffsetDateTime, macros::format_description};
+use time::{macros::format_description, OffsetDateTime};
 
 use crate::prelude::*;
 use ratatui::prelude::*;

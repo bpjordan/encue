@@ -1,6 +1,6 @@
 use rodio::{queue::SourcesQueueOutput, Sink};
 
-use super::{ExecuteCue, ExecuteCueError};
+use super::{engine::ActiveCueMeta, ExecuteCue, ExecuteCueError};
 
 pub struct PlaybackExecutable {
     label: Option<String>,
@@ -19,7 +19,7 @@ impl ExecuteCue for PlaybackExecutable {
         engine.output_handle().play_raw(self.queue)?;
         self.sink.play();
         if let Some(label) = self.label {
-            engine.add_sink(label, self.sink)
+            engine.add_sink(label, self.sink, ActiveCueMeta)
         } else {
             self.sink.detach()
         }

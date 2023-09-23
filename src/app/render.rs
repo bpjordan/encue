@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use super::AppState;
+use super::{widgets::active_cues, AppState};
 
 pub fn render<B: Backend>(term: &mut Terminal<B>, app: &mut AppState) -> Result<()> {
     term.draw(|f| {
@@ -38,7 +38,7 @@ pub fn render<B: Backend>(term: &mut Terminal<B>, app: &mut AppState) -> Result<
         f.render_stateful_widget(app.widget().clone(), main, app.list_state_mut());
         f.render_widget(rta(), top_left);
         f.render_widget(clock(), top_mid);
-        f.render_widget(active_list(), top_right);
+        f.render_stateful_widget(active_cues(), top_right, app.engine_mut());
         f.render_widget(hotkey_guide(), keys);
         if let Ok(mut state) = app.logger_state().lock() {
             f.render_stateful_widget(logger(), bottom, &mut state)
@@ -56,12 +56,6 @@ fn rta() -> impl Widget {
     Paragraph::new("Placeholder")
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::ALL).title("Output"))
-}
-
-fn active_list() -> impl Widget {
-    Paragraph::new("Placeholder")
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL).title("Active Cues"))
 }
 
 fn clock() -> impl Widget {

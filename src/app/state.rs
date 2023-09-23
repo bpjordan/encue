@@ -129,6 +129,10 @@ impl<'a> AppState<'a> {
     pub fn list_height_mut(&mut self) -> &mut u16 {
         &mut self.list_height
     }
+
+    pub fn engine_mut(&mut self) -> &mut AudioEngine {
+        &mut self.engine
+    }
 }
 
 impl AppState<'_> {
