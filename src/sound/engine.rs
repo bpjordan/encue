@@ -1,14 +1,17 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use rodio::{OutputStream, OutputStreamHandle, Sink};
 
 use crate::prelude::*;
 
-pub struct ActiveCueMeta;
+use super::metadata::PlaybackMeta;
 
 struct ActiveCue {
     sink: Arc<Sink>,
-    meta: ActiveCueMeta,
+    meta: Arc<Mutex<PlaybackMeta>>,
 }
 
 pub struct AudioEngine {
@@ -37,7 +40,7 @@ impl AudioEngine {
         self.sinks.get(k).and_then(|f| Some(f.sink.clone()))
     }
 
-    pub fn add_sink(&mut self, k: impl ToString, sink: Sink, meta: ActiveCueMeta) {
+    pub fn add_sink(&mut self, k: impl ToString, sink: Sink, meta: Arc<Mutex<PlaybackMeta>>) {
         let sink = Arc::new(sink);
 
         self.sinks.insert(k.to_string(), ActiveCue { sink, meta });
@@ -53,7 +56,7 @@ impl AudioEngine {
         }
     }
 
-    pub fn metadata(&self) -> impl Iterator<Item = (&str, &ActiveCueMeta)> + '_ {
+    pub fn metadata(&self) -> impl Iterator<Item = (&str, &Arc<Mutex<PlaybackMeta>>)> + '_ {
         self.sinks.iter().map(|(k, v)| (k.as_str(), &v.meta))
     }
 

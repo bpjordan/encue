@@ -14,6 +14,7 @@ homepage = "https://github.com/bpjordan/encue"
 [dependencies]
 crossterm = { version = "0.26.1" }
 itertools = { version = "0.11.0", default-features = false }
+lofty = "0.15.0"
 log = { version = "0.4.19", features = ["std"] }
 rand = "0.8.5"
 ratatui = { version = "0.22.0", features = ["serde", "macros", "time"] }

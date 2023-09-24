@@ -1,19 +1,21 @@
 use std::{
     convert::Infallible,
-    io::{self, BufReader},
+    io::{self, BufReader, Seek},
     path::{Path, PathBuf},
     str::FromStr,
-    time::Duration,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
 };
 
 use itertools::Either;
+use lofty::AudioFile;
 use rand::{seq::SliceRandom, thread_rng};
-use rodio::{source, Decoder, Sink, Source};
+use rodio::{source, Decoder, Sink};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use thiserror::Error;
 
-use crate::sound::{PlaybackExecutable, PrepareCue};
+use crate::sound::{metadata::PlaybackMeta, PlaybackExecutable, PrepareCue};
 
 #[serde_as]
 #[cfg_attr(test, derive(Eq, PartialEq))]
@@ -112,22 +114,51 @@ impl PrepareCue for PlaylistCue {
             files.shuffle(&mut thread_rng())
         }
 
+        let meta = Arc::new(Mutex::new(PlaybackMeta {
+            start: Instant::now(),
+            duration: Duration::ZERO,
+        }));
+
+        let meta_update = meta.clone();
+
         let sources = if self.repeat {
             Either::Left(files.into_iter().cycle())
         } else {
             Either::Right(files.into_iter())
         }
-        .filter_map(|filename| {
-            let decoder = match std::fs::File::open(&filename) {
+        .filter_map(move |filename| {
+            let mut file = match std::fs::File::open(&filename) {
                 Err(e) => {
-                    log::warn!("Skipped file {} due to IO error: {e}", filename.display());
+                    log::warn!(
+                        "Skipped playlist file {} due to IO error: {e}",
+                        filename.display()
+                    );
                     return None;
                 }
-                Ok(f) => Decoder::new(BufReader::new(f)),
+                Ok(f) => f,
             };
 
-            let s: Box<dyn Source<Item = i16> + Send + Sync> = match decoder {
-                Ok(d) => Box::new(d),
+            let duration = match lofty::read_from(&mut file) {
+                Ok(tags) => tags.properties().duration(),
+                Err(e) => {
+                    log::warn!(
+                        "Skipped playlist file {} due to metadata error: {e}",
+                        filename.display()
+                    );
+                    return None;
+                }
+            };
+
+            if let Err(e) = file.seek(io::SeekFrom::Start(0)) {
+                log::warn!(
+                    "Skipped playlist file {} due to Seek error: {e}",
+                    filename.display()
+                );
+                return None;
+            };
+
+            let s = match Decoder::new(BufReader::new(file)) {
+                Ok(d) => d,
                 Err(e) => {
                     log::warn!(
                         "Skipped playing file `{}` due to audio decoding error: {e}",
@@ -137,13 +168,17 @@ impl PrepareCue for PlaylistCue {
                 }
             };
 
-            log::debug!("Starting playlist file `{}`", filename.display());
+            *meta_update.lock().unwrap() = PlaybackMeta {
+                start: Instant::now(),
+                duration,
+            };
+
+            log::debug!("Loading playlist file `{}`", filename.display());
 
             Some(s)
         });
 
-        let s: Box<dyn Source<Item = i16> + Send + Sync>;
-        s = Box::new(source::from_iter(sources));
+        let s = source::from_iter(sources);
 
         let (sink, queue) = Sink::new_idle();
 
@@ -157,6 +192,7 @@ impl PrepareCue for PlaylistCue {
             label.map(ToString::to_string),
             sink,
             queue,
+            meta,
         ))
     }
 }

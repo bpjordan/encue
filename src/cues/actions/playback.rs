@@ -1,17 +1,19 @@
 use std::{
     convert::Infallible,
-    io::{self, BufReader},
+    io::{self, BufReader, Seek},
     path::{Path, PathBuf},
     str::FromStr,
-    time::Duration,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
 };
 
+use lofty::AudioFile;
 use rodio::{Decoder, Sink, Source};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use thiserror::Error;
 
-use crate::sound::{PlaybackExecutable, PrepareCue};
+use crate::sound::{metadata::PlaybackMeta, PlaybackExecutable, PrepareCue};
 
 #[serde_as]
 #[cfg_attr(test, derive(Eq, PartialEq))]
@@ -97,6 +99,9 @@ pub enum PlaybackCueError {
 
     #[error("Decoder error: {0}")]
     Decode(#[from] rodio::decoder::DecoderError),
+
+    #[error("Error retrieving metadata: {0}")]
+    Metadata(#[from] lofty::LoftyError),
 }
 
 impl PrepareCue for PlaybackCue {
@@ -105,14 +110,22 @@ impl PrepareCue for PlaybackCue {
     type PrepareError = PlaybackCueError;
 
     fn prepare(&self, label: Option<&str>) -> Result<Self::Executable, Self::PrepareError> {
-        let f = std::fs::File::open(self.file())?;
+        let mut f = std::fs::File::open(self.file())?;
+
+        let duration = match self.duration() {
+            Some(d) => d,
+            None => lofty::read_from(&mut f)?.properties().duration(),
+        };
+
+        f.seek(io::SeekFrom::Start(0))?;
 
         let mut s: Box<dyn Source<Item = i16> + Send + Sync> =
-            Box::new(Decoder::new(BufReader::new(f))?);
+            Box::new(Decoder::new(BufReader::new(f))?.take_duration(duration));
 
-        if let Some(d) = self.duration() {
-            s = Box::new(s.take_duration(d));
-        }
+        let meta = Arc::new(Mutex::new(PlaybackMeta {
+            start: Instant::now(),
+            duration,
+        }));
 
         if self.repeat {
             s = Box::new(s.repeat_infinite())
@@ -124,7 +137,24 @@ impl PrepareCue for PlaybackCue {
 
         let (sink, queue) = Sink::new_idle();
 
-        sink.append(s);
+        let meta_mut = meta.clone();
+        s = Box::new(s.periodic_access(duration, move |_| {
+            meta_mut.lock().unwrap().start = Instant::now();
+        }));
+
+        if let Some(fade_duration) = self.fade_out() {
+            let start_duration = duration.saturating_sub(fade_duration);
+
+            let s = s.buffered();
+            let start = s.clone().take_duration(start_duration);
+            let mut end = s.skip_duration(start_duration).take_duration(fade_duration);
+            end.set_filter_fadeout();
+
+            sink.append(start);
+            sink.append(end);
+        } else {
+            sink.append(s);
+        }
 
         if let Some(vol) = self.volume {
             sink.set_volume(vol as f32 / 100.0)
@@ -134,6 +164,7 @@ impl PrepareCue for PlaybackCue {
             label.map(ToString::to_string),
             sink,
             queue,
+            meta,
         ))
     }
 }

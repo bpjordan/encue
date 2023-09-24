@@ -1,5 +1,6 @@
 mod engine;
 mod executable;
+pub mod metadata;
 mod playback;
 
 pub use engine::AudioEngine;
