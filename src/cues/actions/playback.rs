@@ -137,10 +137,11 @@ impl PrepareCue for PlaybackCue {
 
         let (sink, queue) = Sink::new_idle();
 
-        // let meta_mut = meta.clone();
-        // s = Box::new(s.periodic_access(duration, move |_| {
-        //     meta_mut.lock().unwrap().start = Instant::now();
-        // }));
+        // TODO: This step causes a panic in some circumstances. Need to investigate further
+        let meta_mut = meta.clone();
+        s = Box::new(s.periodic_access(duration, move |_| {
+            meta_mut.lock().unwrap().start = Instant::now();
+        }));
 
         if let Some(fade_duration) = self.fade_out() {
             let start_duration = duration.saturating_sub(fade_duration);
